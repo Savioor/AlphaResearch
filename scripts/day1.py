@@ -86,7 +86,7 @@ def group_by_height(traj, i, start, end, jump):
 def estimate_drag_Cd(velocity, area, density=air_density, coefficient=drag_coefficient):
     return 0.5 * coefficient * (velocity ** 2) * area * density
   
-root = "/home/ron/Desktop/Alexey/"
+root = "/home/ron/Desktop/Alexey/AlphaResearch/"
 def save_as_json(data, file_name, sort_keys=False, indent=1):
     with open(root + file_name + ".json", "w") as f:
         json.dump(data, f, sort_keys=sort_keys, indent=indent)
