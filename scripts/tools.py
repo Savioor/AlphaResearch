@@ -11,7 +11,7 @@ import matplotlib.pyplot as pplot
 
 
 root = "/home/ron/Desktop/Alexey/AlphaResearch/"
-def save_as_json(data, file_name, sort_keys=False, indent=1):
+def save_as_json(data, file_name, sort_keys=True, indent=4):
     with open(root + file_name + ".json", "w") as f:
         json.dump(data, f, sort_keys=sort_keys, indent=indent)
         
@@ -23,13 +23,17 @@ def read_json(file_name):
 Created on Sun Jul 15 15:19:06 2018
 
 usage: 
-group_avarage_velocity(data, lambda t, i: group_by_height(t, i, 0, 0, 0))
 where insted of 0 you put values for start end and jump
 
 @author: alexey
 """
-def group_by_height(traj, i, start, end, jump):
+def group_by_height(traj, i, start, end, jump, unsafe = False):
     val = start
+    
+    if (start > 0.1 or end > 0.2 or jump > 0.05) and not unsafe:
+        print("start = {}, end = {}, jump = {}. all in cm. are you sure you are correct?".format(start, end, jump)
+              + " if so please use unsafe mode")
+        raise Exception('Suspicious values inserted in unsafe mode')
     
     while (val <= end):
         if val <= traj.pos()[i, 1] < min(val + jump, end):
@@ -38,6 +42,14 @@ def group_by_height(traj, i, start, end, jump):
     
     return "no group"
 
+"""
+Created on Mon Jul 16 10:34:15 2018
+
+gets a flowtracks.Scene and a filter and return all trejectories that match
+the filter (in a list)
+
+@author: alexey
+"""
 def filter_trajectories(data, filt):
     ret = []
     for traj in data.iter_trajectories():
@@ -67,6 +79,23 @@ def merge_dict(dict1, dict2, merge_func, ignore_1 = False, ignore_2 = False):
     for key in filter(lambda k: k not in dict1.keys(), dict2.keys()):
         newd[key] = dict2[key]
     return newd
+
+def is_in_corner(traj):
+       return -traj.pos()[0, 0] > 0.05 and -traj.pos()[0, 2] > 0.075
+
+"""
+Created on Mon Jul 16 10:34:15 2018
+
+common use to get x vel from dict:
+    get_data_from_dict(dic, lambda a: -a[0][0])
+
+@author: alexey
+"""
+def get_data_from_dict(dic, func):
+    ret = []
+    for key in sorted(dic.keys()):
+        ret.append(func(dic[key]))
+    return ret
 
 def to_wrold_coords(vector):
     return [-vector[0], -vector[2], vector[1]]

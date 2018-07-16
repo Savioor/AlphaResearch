@@ -14,6 +14,9 @@ area_tall = 0.1 * 0.05 # cm^2
 area_short = 0.05 * 0.05 # cm^2
 drag_coefficient = 2.05
 
+def main():
+    pass
+
 """
 Created on Sun Jul 15 15:19:06 2018
 
