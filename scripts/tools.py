@@ -1,14 +1,15 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jul 16 10:34:15 2018
+Created on Tue Jul 17 12:30:55 2018
 
 @author: alexey
 """
 
+import flowtracks.io as ft
+import numpy as np
 import json
 import matplotlib.pyplot as pplot
-
 
 root = "/home/ron/Desktop/Alexey/AlphaResearch/"
 def save_as_json(data, file_name, sort_keys=True, indent=4):
@@ -18,7 +19,7 @@ def save_as_json(data, file_name, sort_keys=True, indent=4):
 def read_json(file_name):
     with open(root + file_name + ".json", "r") as f:
         return json.load(f)
-
+    
 """
 Created on Sun Jul 15 15:19:06 2018
 
@@ -91,18 +92,82 @@ common use to get x vel from dict:
 
 @author: alexey
 """
-def get_data_from_dict(dic, func):
+def get_data_from_dict(dic, func, include_height = False):
     ret = []
     for key in sorted(dic.keys()):
         ret.append(func(dic[key]))
     return ret
 
-def to_wrold_coords(vector):
-    return [-vector[0], -vector[2], vector[1]]
+#   def to_wrold_coords(vector):
+#      return [-vector[0], -vector[2], vector[1]]
 
+# TODO make not super bad
 def plot_data(x_axis, *yaxis):
     fig, ax = pplot.subplots()
     for item in yaxis:
         ax.plot(x_axis, item)
     return fig, ax
 
+"""
+Created on Sun Jul 15 15:19:06 2018
+
+data - an array of trajectory objects
+
+grouping_func - some function that takes a trajectory and an index and returns
+a string. The index is the "time frame" that shold be refrenced. The string
+should represent the group which the particle belongs to.
+
+filter - A function that gets a trajectory and returns False to skip it
+
+parameter_func - the function that gets the parameter to put in the groups
+
+return value - a dictionery where the keys are the name of the groups and the
+values are the parameter
+
+@author: alexey
+"""    
+def group_parameter(data, grouping_func, parameter_func,
+                    average = True,
+                    filt=lambda a: True, 
+                    step = 1):
+    count = {}
+    total = {}
+    iterable = None
+    c = 0
+    
+    if type(data) is ft.Scene:
+        iterable = data.iter_trajectories()
+    else:
+        iterable = data
+    
+    for element in iterable:
+        c += 1
+        if c % step != 0:
+            continue
+        if not filt(element):
+            continue
+        point_count = len(element.velocity())
+        for i in xrange(point_count):
+            loc = grouping_func(element, i)
+            if loc in count.keys():
+                count[loc] += 1
+                total[loc] += parameter_func(element, i)
+            else:
+                count[loc] = 1
+                total[loc] = parameter_func(element, i)
+    if not average:
+        return total
+    for key in count.keys():
+        total[key] = [(total[key] / count[key]).tolist(), count[key]]
+    return total
+
+"""
+Created on Sun Jul 15 15:19:06 2018
+
+usage - 
+    group_avarage_velocity(data, group_by_location)
+
+@author: alexey
+"""
+def group_by_location(traj, i):
+    return tuple(map(lambda a: round(a, 2), traj.pos()[i]))
