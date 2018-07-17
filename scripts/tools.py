@@ -24,6 +24,7 @@ def read_json(file_name):
 Created on Sun Jul 15 15:19:06 2018
 
 usage: 
+    group_avarage_velocity(data, lambda t, i: group_by_height(t, i, 0, 0, 0))
 where insted of 0 you put values for start end and jump
 
 @author: alexey
@@ -92,7 +93,7 @@ common use to get x vel from dict:
 
 @author: alexey
 """
-def get_data_from_dict(dic, func, include_height = False):
+def get_data_from_dict(dic, func):
     ret = []
     for key in sorted(dic.keys()):
         ret.append(func(dic[key]))
@@ -144,6 +145,8 @@ def group_parameter(data, grouping_func, parameter_func,
         c += 1
         if c % step != 0:
             continue
+        if c % 200000 == 0:
+            print "200,000 units are ready, with a million more well on the way"
         if not filt(element):
             continue
         point_count = len(element.velocity())
