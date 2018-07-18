@@ -24,7 +24,9 @@ def group_avarage_velocity(data, grouping_func,
 
 def estimate_drag_Cd(velocity, area, density=air_density, coefficient=drag_coefficient):
     return 0.5 * coefficient * (velocity ** 2) * area * density
-    
+
+def get_average_velocity(speed):
+    group_avarage_velocity(data, lambda t, i: group_by_height(t, i, 0, 0, 0))    
 
 minimum_acc = 10 ** 4
 def calc_vel_and_drag_from_data_Cd(data, area, acc=minimum_acc):
