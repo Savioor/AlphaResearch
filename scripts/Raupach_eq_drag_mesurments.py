@@ -11,6 +11,24 @@ import numpy as np
 import flowtracks.io as ft
 from Cd_drag_mesurment import group_avarage_velocity
 
+def calculate_midpoint_derivative(f, x0, h):
+    return (1.0 / 2.0*h) * (f(x0 + h) - f(x0 - h))
+
+def calculate_start_derivative(f, x0, h):
+    return (1.0 / 2.0*h) * (-3 * f(x0) + 4 * f(x0 + h) - f(x0 + 2*h))
+
+def calculate_end_derivative(f, x0, h):
+    return (1.0 / 2.0*h) * (f(x0) - 4*f(x0 - h) + 3*f(x0 - 2*h))
+
+def_accuracy = 10 ** 5
+def get_drag_raupach(velocity, def_accuracy):
+    
+    velocity_data = tls.read_json("cd_data/avg_vel_by_height_" + velocity)
+    z_dir_vel = {}
+    for key in velocity_data.keys():
+        z_dir_vel[] = velocity_data[]
+    
+
 def get_reynolds_stress(data, avg_vel_by_loc, start=0, end=0.18, step=0.01):
     
     if type(avg_vel_by_loc) is str:
