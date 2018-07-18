@@ -36,7 +36,9 @@ def get_dispersive_stress(data, avg_vel_by_loc, avg_vel_by_h, start=0, end=0.18,
     def param_f(elem, i):
         position = tls.group_by_location(elem, i)
         pos_str = str(position).replace("-0.0", "0.0")
-        height = str(abs(position[-1])) + " - " + str(abs(position[-1]) + step)
+        height = str(abs(position[1])) + " - " + str(abs(position[1]) + step)
+        if height not in avg_vel_by_h.keys():
+            height = str(abs(position[1]) - step) + " - " + str(abs(position[1]))
         return (-avg_vel_by_loc[pos_str][0][0] + avg_vel_by_h[height][0][0]) * \
                 (avg_vel_by_loc[pos_str][0][1] - avg_vel_by_h[height][0][1])
         

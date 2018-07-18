@@ -7,6 +7,8 @@ Created on Sun Jul 15 15:19:06 2018
 """
 
 import tools as tls
+import flowtracks.io as ft
+import numpy as np
 
 air_density = 1.2041 # kg / m^3
 area_tall = 0.1 * 0.05 # cm^2
@@ -26,8 +28,20 @@ def estimate_drag_Cd(velocity, area, density=air_density, coefficient=drag_coeff
     return 0.5 * coefficient * (velocity ** 2) * area * density
 
 def get_average_velocity(speed):
-    group_avarage_velocity(data, lambda t, i: group_by_height(t, i, 0, 0, 0))    
-
+    low_speed = group_avarage_velocity(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5"),
+                           lambda t, i: tls.group_by_height(t, i, 0, 0.18, 0.01))
+    high_speed = group_avarage_velocity(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_high.h5"),
+                           lambda t, i: tls.group_by_height(t, i, 0, 0.18, 0.01))        
+    
+    tls.save_as_json(low_speed, "cd_data/avg_vel_by_height_" + speed + "_lower")
+    tls.save_as_json(high_speed, "cd_data/avg_vel_by_height_" + speed + "_higher")
+    
+    mrg = tls.merge_dict(low_speed, high_speed, 
+    lambda a, b: [ ((np.array(a[0]) * a[1] + np.array(b[0]) * b[1]) / (a[1] + b[1])).tolist(),
+     a[1] + b[1]])
+    
+    tls.save_as_json(mrg, "cd_data/avg_vel_by_height_" + speed)
+    
 minimum_acc = 10 ** 4
 def calc_vel_and_drag_from_data_Cd(data, area, acc=minimum_acc):
     ret = {}

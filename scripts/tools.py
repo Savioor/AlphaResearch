@@ -161,7 +161,7 @@ def group_parameter(data, grouping_func, parameter_func,
     if not average:
         return total
     for key in count.keys():
-        total[key] = [(total[key] / count[key]).tolist(), count[key]]
+        total[key] = [(total[key] / count[key]), count[key]]
     return total
 
 """
