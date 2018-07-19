@@ -11,22 +11,124 @@ import numpy as np
 import flowtracks.io as ft
 from Cd_drag_mesurment import group_avarage_velocity
 
-def calculate_midpoint_derivative(f, x0, h):
-    return (1.0 / 2.0*h) * (f(x0 + h) - f(x0 - h))
+def calculate_midpoint_derivative(prev, nex, h):
+    return (1.0 / 2.0*h) * (nex - prev)
 
-def calculate_start_derivative(f, x0, h):
-    return (1.0 / 2.0*h) * (-3 * f(x0) + 4 * f(x0 + h) - f(x0 + 2*h))
+def calculate_start_derivative(first, second, third, h):
+    return (1.0 / 2.0*h) * (-3 * first + 4 * second - third)
 
-def calculate_end_derivative(f, x0, h):
-    return (1.0 / 2.0*h) * (f(x0) - 4*f(x0 - h) + 3*f(x0 - 2*h))
+def calculate_end_derivative(last, prelast, preprelast, h):
+    return (1.0 / 2.0*h) * (preprelast - 4*prelast + 3*last)
+
 
 def_accuracy = 10 ** 5
-def get_drag_raupach(velocity, def_accuracy):
+def get_drag_raupach(velocity, area = 0.0005, accuracy=def_accuracy):
+    
+    to_ret = {}
     
     velocity_data = tls.read_json("cd_data/avg_vel_by_height_" + velocity)
     z_dir_vel = {}
+    x_dir_vel = {}
     for key in velocity_data.keys():
-        z_dir_vel[] = velocity_data[]
+        if velocity_data[key][1] < accuracy:
+            continue
+        ind = (float(key.split(" - ")[0]) * 100 + float(key.split(" - ")[1]) * 100) / 2.0
+        x_dir_vel[ind] = -velocity_data[key][0][0]
+        z_dir_vel[ind] = velocity_data[key][0][1]
+    
+    to_ret["v"] = x_dir_vel
+    to_ret["w"] = z_dir_vel
+    
+    rey_data = tls.read_json("raupach_data/rey_stress_" + velocity)
+    rey_stress = {}
+    
+    for key in rey_data:
+        if rey_data[key][1] < accuracy:
+            continue
+        ind = (float(key.split(" - ")[0]) * 100 + float(key.split(" - ")[1]) * 100) / 2.0
+        rey_stress[ind] = rey_data[key][0]
+        
+    disp_data = tls.read_json("raupach_data/disp_stress_" + velocity)
+    disp_stress = {}
+    
+    for key in disp_data:
+        if disp_data[key][1] < accuracy:
+            continue
+        ind = (float(key.split(" - ")[0]) * 100 + float(key.split(" - ")[1]) * 100) / 2.0
+        disp_stress[ind] = disp_data[key][0]
+        
+    to_ret["rey stress"] = rey_stress
+    to_ret["disp stress"] = disp_stress
+    
+    dv = {}
+    drs = {}
+    dds = {}
+    
+    skv = sorted(x_dir_vel.keys())
+    skrs = sorted(rey_stress.keys())
+    skds = sorted(disp_stress.keys())
+    
+    for h in xrange(0, 16, 1):
+        key = h + 0.5
+        
+        v = x_dir_vel
+        if key in skv:
+            if skv.index(key) == 0:
+                dv[key] = calculate_start_derivative(v[key], v[key + 1], v[key + 2], 0.01)
+            elif skv.index(key) == len(skv) - 1:
+                dv[key] = calculate_end_derivative(v[key], v[key - 1], v[key - 2], 0.01)
+            else:
+                dv[key] = calculate_midpoint_derivative(v[key - 1], v[key + 1], 0.01)
+        
+        rs = rey_stress
+        if key in skrs:
+            if skrs.index(key) == 0:
+                drs[key] = calculate_start_derivative(rs[key], rs[key + 1], rs[key + 2], 0.01)
+            elif skrs.index(key) == len(skv) - 1:
+                drs[key] = calculate_end_derivative(rs[key], rs[key - 1], rs[key - 2], 0.01)
+            else:
+                drs[key] = calculate_midpoint_derivative(rs[key - 1], rs[key + 1], 0.01)
+        
+        ds = disp_stress
+        if key in skds:
+            if skds.index(key) == 0:
+                dds[key] = calculate_start_derivative(ds[key], ds[key + 1], ds[key + 2], 0.01)
+            elif skv.index(key) == len(skv) - 1:
+                dds[key] = calculate_end_derivative(ds[key], ds[key - 1], ds[key - 2], 0.01)
+            else:
+                dds[key] = calculate_midpoint_derivative(ds[key - 1], ds[key + 1], 0.01)
+    
+    to_ret["v gradient"] = dv
+    to_ret["rey stress gradient"]  = drs
+    to_ret["disp stress gradient"] = dds
+    
+    pressure_grad = 0.0
+    c = 0
+    for key in drs:
+        if key > 12:
+            c += 1
+            pressure_grad += drs[key]
+    pressure_grad /= c
+    
+    drag = {}
+    
+    for h in xrange(0, 10, 1):
+        key = h + 0.5
+        if key in x_dir_vel.keys() and key in rey_stress.keys() and key in disp_stress.keys():
+            drag[key] = -(z_dir_vel[key]*dv[key] + drs[key] + dds[key] + pressure_grad)
+    
+    to_ret["p_drag"] = pressure_grad
+    to_ret["drag"] = drag
+    
+    c_d = {}
+    
+    for key in drag.keys():
+        c_d[key] = drag[key] / (0.5 * (float(velocity) ** 2) * area)
+    
+    to_ret["Cd"] = c_d
+    
+    return to_ret
+    
     
 
 def get_reynolds_stress(data, avg_vel_by_loc, start=0, end=0.18, step=0.01):
