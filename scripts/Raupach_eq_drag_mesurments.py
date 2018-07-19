@@ -110,6 +110,8 @@ def get_drag_raupach(velocity, area = 0.0005, accuracy=def_accuracy):
             pressure_grad += drs[key]
     pressure_grad /= c
     
+    pressure_grad = 0.0
+    
     drag = {}
     
     for h in xrange(0, 10, 1):
@@ -117,13 +119,13 @@ def get_drag_raupach(velocity, area = 0.0005, accuracy=def_accuracy):
         if key in x_dir_vel.keys() and key in rey_stress.keys() and key in disp_stress.keys():
             drag[key] = -(z_dir_vel[key]*dv[key] + drs[key] + dds[key] + pressure_grad)
     
-    to_ret["p_drag"] = pressure_grad
+    to_ret["p grad"] = pressure_grad
     to_ret["drag"] = drag
     
     c_d = {}
     
     for key in drag.keys():
-        c_d[key] = drag[key] / (0.5 * (float(velocity) ** 2) * area)
+        c_d[key] = drag[key] / (-0.5 * (float(velocity) ** 2) * area)
     
     to_ret["Cd"] = c_d
     

@@ -174,3 +174,16 @@ usage -
 """
 def group_by_location(traj, i):
     return tuple(map(lambda a: round(a, 2), traj.pos()[i]))
+
+"""
+copy paste tools
+
+lis = []
+for h in xrange(0, 16, 1):
+    key = h + 0.5
+    if key in _.keys():    
+        lis.append((_[key], key / 100.0))
+        
+ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "mo-")
+
+"""
