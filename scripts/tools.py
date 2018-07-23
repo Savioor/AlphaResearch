@@ -153,10 +153,10 @@ def group_parameter(data, grouping_func, parameter_func,
         for i in xrange(point_count):
             loc = grouping_func(element, i)
             if loc in count.keys():
-                count[loc] += 1
+                count[loc] += 1.0
                 total[loc] += parameter_func(element, i)
             else:
-                count[loc] = 1
+                count[loc] = 1.0
                 total[loc] = parameter_func(element, i)
     if not average:
         return total

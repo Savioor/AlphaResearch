@@ -12,17 +12,18 @@ import flowtracks.io as ft
 from Cd_drag_mesurment import group_avarage_velocity
 
 def calculate_midpoint_derivative(prev, nex, h):
-    return (1.0 / 2.0*h) * (nex - prev)
+    return (1.0 / (2.0*h)) * (nex - prev)
 
 def calculate_start_derivative(first, second, third, h):
-    return (1.0 / 2.0*h) * (-3 * first + 4 * second - third)
+    return (1.0 / (2.0*h)) * (-3 * first + 4 * second - third)
 
 def calculate_end_derivative(last, prelast, preprelast, h):
-    return (1.0 / 2.0*h) * (preprelast - 4*prelast + 3*last)
+    return (1.0 / (2.0*h)) * (preprelast - 4*prelast + 3*last)
 
 
 def_accuracy = 10 ** 5
-def get_drag_raupach(velocity, area = 0.0005, accuracy=def_accuracy):
+area_by_volume = (0.01*0.05)/(0.1*0.15*0.01)
+def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accuracy):
     
     to_ret = {}
     
@@ -68,35 +69,43 @@ def get_drag_raupach(velocity, area = 0.0005, accuracy=def_accuracy):
     skrs = sorted(rey_stress.keys())
     skds = sorted(disp_stress.keys())
     
-    for h in xrange(0, 16, 1):
-        key = h + 0.5
-        
-        v = x_dir_vel
-        if key in skv:
-            if skv.index(key) == 0:
-                dv[key] = calculate_start_derivative(v[key], v[key + 1], v[key + 2], 0.01)
-            elif skv.index(key) == len(skv) - 1:
-                dv[key] = calculate_end_derivative(v[key], v[key - 1], v[key - 2], 0.01)
-            else:
-                dv[key] = calculate_midpoint_derivative(v[key - 1], v[key + 1], 0.01)
-        
-        rs = rey_stress
-        if key in skrs:
-            if skrs.index(key) == 0:
-                drs[key] = calculate_start_derivative(rs[key], rs[key + 1], rs[key + 2], 0.01)
-            elif skrs.index(key) == len(skv) - 1:
-                drs[key] = calculate_end_derivative(rs[key], rs[key - 1], rs[key - 2], 0.01)
-            else:
-                drs[key] = calculate_midpoint_derivative(rs[key - 1], rs[key + 1], 0.01)
-        
-        ds = disp_stress
-        if key in skds:
-            if skds.index(key) == 0:
-                dds[key] = calculate_start_derivative(ds[key], ds[key + 1], ds[key + 2], 0.01)
-            elif skv.index(key) == len(skv) - 1:
-                dds[key] = calculate_end_derivative(ds[key], ds[key - 1], ds[key - 2], 0.01)
-            else:
-                dds[key] = calculate_midpoint_derivative(ds[key - 1], ds[key + 1], 0.01)
+    if not linear:
+        for h in xrange(0, 16, 1):
+            key = h + 0.5
+            
+            v = x_dir_vel
+            if key in skv:
+                if skv.index(key) == 0:
+                    dv[key] = calculate_start_derivative(v[key], v[key + 1], v[key + 2], 0.01)
+                elif skv.index(key) == len(skv) - 1:
+                    dv[key] = calculate_end_derivative(v[key], v[key - 1], v[key - 2], 0.01)
+                else:
+                    dv[key] = calculate_midpoint_derivative(v[key - 1], v[key + 1], 0.01)
+            
+            rs = rey_stress
+            if key in skrs:
+                if skrs.index(key) == 0:
+                    drs[key] = calculate_start_derivative(rs[key], rs[key + 1], rs[key + 2], 0.01)
+                elif skrs.index(key) == len(skv) - 1:
+                    drs[key] = calculate_end_derivative(rs[key], rs[key - 1], rs[key - 2], 0.01)
+                else:
+                    drs[key] = calculate_midpoint_derivative(rs[key - 1], rs[key + 1], 0.01)
+            
+            ds = disp_stress
+            if key in skds:
+                if skds.index(key) == 0:
+                    dds[key] = calculate_start_derivative(ds[key], ds[key + 1], ds[key + 2], 0.01)
+                elif skv.index(key) == len(skv) - 1:
+                    dds[key] = calculate_end_derivative(ds[key], ds[key - 1], ds[key - 2], 0.01)
+                else:
+                    dds[key] = calculate_midpoint_derivative(ds[key - 1], ds[key + 1], 0.01)
+    else:
+        for h in xrange(0, 16, 1):
+            key = h + 0.5
+            dv[key] = (x_dir_vel[skv[-1]] - x_dir_vel[skv[0]]) / ((skv[-1] - skv[0]) / 100.0)
+            drs[key] = (rey_stress[skrs[-1]] - rey_stress[skrs[0]]) / ((skrs[-1] - skrs[0]) / 100.0)
+            dds[key] = (disp_stress[skds[-1]] - disp_stress[skds[0]]) / ((skds[-1] - skds[0]) / 100.0)
+            
     
     to_ret["v gradient"] = dv
     to_ret["rey stress gradient"]  = drs
@@ -109,25 +118,32 @@ def get_drag_raupach(velocity, area = 0.0005, accuracy=def_accuracy):
             c += 1
             pressure_grad += drs[key]
     pressure_grad /= c
+    pressure_grad *= -1
     
-    pressure_grad = 0.0
+    #pressure_grad = 0.0
     
     drag = {}
+    z_times_dv = {}
     
     for h in xrange(0, 10, 1):
         key = h + 0.5
         if key in x_dir_vel.keys() and key in rey_stress.keys() and key in disp_stress.keys():
+            z_times_dv[key] = z_dir_vel[key]*dv[key]    
             drag[key] = z_dir_vel[key]*dv[key] + drs[key] + dds[key] + pressure_grad
     
+    to_ret["w*dv"] = z_times_dv
     to_ret["p grad"] = pressure_grad
     to_ret["drag"] = drag
     
     c_d = {}
+    c_d_b = {}
     
     for key in drag.keys():
         c_d[key] = drag[key] / (-0.5 * (float(velocity) ** 2) * area)
+        c_d_b[key] = drs[key] / (-0.5 * area * (x_dir_vel[key]**2))
     
     to_ret["Cd"] = c_d
+    to_ret["Cd br"] = c_d_b
     
     return to_ret
     
