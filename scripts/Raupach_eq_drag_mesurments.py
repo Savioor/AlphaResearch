@@ -119,8 +119,8 @@ def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accur
             pressure_grad += drs[key]
     pressure_grad /= c
     pressure_grad *= -1
-    
-    #pressure_grad = 0.0
+    to_ret["p grad"] = pressure_grad
+    pressure_grad = 0.0
     
     drag = {}
     z_times_dv = {}
@@ -132,7 +132,6 @@ def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accur
             drag[key] = z_dir_vel[key]*dv[key] + drs[key] + dds[key] + pressure_grad
     
     to_ret["w*dv"] = z_times_dv
-    to_ret["p grad"] = pressure_grad
     to_ret["drag"] = drag
     
     c_d = {}
