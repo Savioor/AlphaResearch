@@ -43,6 +43,7 @@ def get_average_velocity(speed):
     tls.save_as_json(mrg, "cd_data/avg_vel_by_height_" + speed)
     
 minimum_acc = 10 ** 4
+default = "cd_data/avg_vel_by_height_"
 def calc_vel_and_drag_from_data_Cd(data, area=0.0005, acc=minimum_acc):
     ret = {}
     0
