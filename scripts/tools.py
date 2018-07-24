@@ -175,6 +175,14 @@ usage -
 def group_by_location(traj, i):
     return tuple(map(lambda a: round(a, 2), traj.pos()[i]))
 
+def plot_def(prop, filt = lambda a: a, start = 0, end = None, mod = lambda a: a):
+    lis = []
+    for key in sorted(_.keys()):
+        k = mod(key)  
+        lis.append((filt(_[key]), k))
+    lis = lis[start:end]
+    ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), prop)
+
 """
 copy paste tools
 
