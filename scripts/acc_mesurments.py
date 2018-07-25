@@ -25,6 +25,31 @@ def group_by_x_n_z(traj, i):
     loc = map(lambda a: round(a, 2), traj.pos()[i])
     return loc[0], loc[1]
 
+def get_acc(vel):
+    sl = ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + vel + "_low.h5")
+    sh = ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + vel + "_high.h5")
+    
+    acc_low = group_avarage_acc(sl, group_by_x_n_z)
+    acc_to_save = {}
+    for key in acc_low.keys():
+        acc_to_save[key] = [acc_low[key][0].tolist(), acc_low[key][1]]
+    tls.save_as_json(acc_to_save, "accel_by_x_and_z_"+ vel +"_lower")
+    print "Lower done"
+    
+    acc_high = group_avarage_acc(sh, group_by_x_n_z)
+    acc_to_save = {}
+    for key in acc_high.keys():
+        acc_to_save[key] = [acc_high[key][0].tolist(), acc_high[key][1]]
+    tls.save_as_json(acc_to_save, "accel_by_x_and_z_"+ vel +"_higher")
+    print "Higher done"
+    
+    m = tls.merge_dict(tls.read_json("accel_by_x_and_z_" + vel + "_higher"), 
+                   tls.read_json("accel_by_x_and_z_" + vel + "_lower"), 
+    lambda a, b: [ ((np.array(a[0]) * a[1] + np.array(b[0]) * b[1]) / (a[1] + b[1])).tolist(),
+     a[1] + b[1]])
+    tls.save_as_json(m, "accel_by_x_and_z_" + vel)
+    print "DONE"
+
 def draw_quiver(vel):
     acc = tls.read_json("accel_by_x_and_z_" + vel)
     fig, ax = pplot.subplots()

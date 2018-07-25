@@ -13,6 +13,71 @@ from Raupach_eq_drag_mesurments import get_drag_raupach, area_by_volume
 from acc_mesurments import sum_all_acc
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, air_density
 
+def heat_map_velocity(vel):
+    fig, ax = pplot.subplots()
+    scale, sax = pplot.subplots()
+    acc_raw = tls.read_json("raupach_data/avg_vel_by_loc_" + vel)
+    acc = {}
+     
+    for key in acc_raw.keys():
+        newk = ", ".join(key.split(", ")[:-1])
+        if newk in acc.keys():
+            acc[newk] += np.array([np.array(acc_raw[key][0]) * acc_raw[key][1], acc_raw[key][1]])
+        else:
+            acc[newk] = np.array([np.array(acc_raw[key][0]) * acc_raw[key][1], acc_raw[key][1]])
+    
+    for key in acc.keys():
+        acc[key][0] /= acc[key][1]
+        
+    vals_raw = []
+    for item in acc.keys():
+         if acc[item][1] < 10000:
+            continue
+         x = int(float(item.split(", ")[0].replace("(", "")) * 100)
+         vals_raw.append(-acc[item][0][0])
+         
+    maximum = max(vals_raw)
+    minimum = min(vals_raw)
+    mat = np.zeros(shape=(18, 18, 3)).tolist()
+    mat_s = np.zeros(shape=(1, 99, 3)).tolist()
+    
+    for key in acc.keys():
+        x = int(float(key.split(", ")[0].replace("(", "")) * 100)
+        if x > 0:
+             x = -x
+        if acc[key][1] < 10000:
+            continue
+        z = int(float(key.split(", ")[1].replace(")", "")) * 100)
+        val = ((-acc[key][0][0] - minimum) / (maximum - minimum))
+        mat[z][-x][0] = val
+        mat[z][-x][1] = 0
+        mat[z][-x][2] = 1.0 - val
+        ax.text(-x / 10.0 + 0.05, z / 10.0 + 0.05, round(-acc[key][0][0], 1), ha="center",
+                va="center", color="w", size=7.8)
+    
+    for i in xrange(11):
+        if i <= 5:
+            mat[i][7] = [1, 1, 1]
+        mat[i][15] = [1, 1, 1]
+    
+    val = 0.01
+    ind = 0
+    while val <= 1:
+        mat_s[0][ind][0] = val
+        mat_s[0][ind][1] = 0
+        mat_s[0][ind][2] = 1 - val
+        ind += 1
+        val += 0.01
+        
+    sax.imshow(mat_s,  extent=[minimum, maximum, 0, 1], aspect='auto')
+    sax.set_xticks(map(lambda a: round(a, 2), np.linspace(minimum, maximum, 12)))
+    ax.imshow(mat, extent=[0, 1.8, 0, 1.8], origin="lower", aspect='auto')
+    
+    ax.set_xlabel(r"$x/H$")
+    ax.set_ylabel(r"$z/H$")
+    
+    return fig, ax, scale, sax
+
 def quiver_velocity(vel):
     acc = tls.read_json("raupach_data/avg_vel_by_loc_" + vel)
     fig, ax = pplot.subplots()
@@ -89,6 +154,7 @@ def plot_Cd(vel, use_U_inf=False):
         lis.append((t[key], key / 10.0))
     if not use_U_inf:
         lis = lis[1:]
+    print lis
     ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "mo-", label="Brunet et. al.")
     
     """
@@ -106,6 +172,7 @@ def plot_Cd(vel, use_U_inf=False):
     for key in sorted(t.keys()):
         lis.append((t[key][0], key * 10.0))
     lis = lis[1:-7]
+    print lis
     ax.plot(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), "co-", label="Accel local avg")
     
     ax.legend()
