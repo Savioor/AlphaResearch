@@ -21,7 +21,7 @@ def calculate_end_derivative(last, prelast, preprelast, h):
     return (1.0 / (2.0*h)) * (preprelast - 4*prelast + 3*last)
 
 
-def_accuracy = 10 ** 5
+def_accuracy = 10 ** 4
 area_by_volume = (0.01*0.05)/(0.1*0.15*0.01)
 def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accuracy):
     
@@ -138,7 +138,7 @@ def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accur
     c_d_b = {}
     
     for key in drag.keys():
-        c_d[key] = drag[key] / (-0.5 * (float(velocity) ** 2) * area)
+        c_d[key] = drs[key] / (-0.5 * (float(velocity) ** 2) * area)
         c_d_b[key] = drs[key] / (-0.5 * area * (x_dir_vel[key]**2))
     
     to_ret["Cd"] = c_d

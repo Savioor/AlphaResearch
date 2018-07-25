@@ -20,6 +20,13 @@ def read_json(file_name):
     with open(root + file_name + ".json", "r") as f:
         return json.load(f)
     
+fig = None
+ax = None
+def p():
+    global fig
+    global ax
+    fig, ax = pplot.subplots()
+    
 """
 Created on Sun Jul 15 15:19:06 2018
 

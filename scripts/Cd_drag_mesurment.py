@@ -47,7 +47,7 @@ general = "cd_data/avg_vel_by_height_"
 nb = "cd_data/nb_"
 def calc_vel_and_drag_from_data_Cd(data, area=0.0005, acc=minimum_acc):
     ret = {}
-    0
+    
     if type(data) is str:
         data = tls.read_json(data)
         
