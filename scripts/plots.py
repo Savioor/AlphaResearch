@@ -138,7 +138,7 @@ def plot_drag(vel, mass = air_density * 0.1 * 0.01 * 0.15):
     
     return fig, ax
 
-def plot_Cd(vel, use_U_inf=False):
+def plot_Cd(vel, use_U_inf=False, version = ""):
     fig, ax = pplot.subplots()
     if not use_U_inf:
         ax.plot([0.5, 0.6, 0.7, 0.8, 0.9, 1], np.ones(6)*2.05, "bo-", label="Fox et. al.")
@@ -148,13 +148,13 @@ def plot_Cd(vel, use_U_inf=False):
         ax.plot(map(lambda a: a[1] * 10.0, t), map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (float(vel)**2)), t), "bo-", label="Fox et. al.")
     
     t = get_drag_raupach(vel, area=area_by_volume)["Cd br"] \
-    if not use_U_inf else get_drag_raupach(vel, area=area_by_volume)["Cd"]
+    if not use_U_inf else get_drag_raupach(vel, area=area_by_volume)["rey stress gradient"]
     lis = []
     for key in sorted(t.keys()):
-        lis.append((t[key], key / 10.0))
+        lis.append((t[key] / (-0.5 * (float(vel) ** 2) * area_by_volume), key / 10.0))
     if not use_U_inf:
         lis = lis[1:]
-    print lis
+    lis = lis[:-6]
     ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "mo-", label="Brunet et. al.")
     
     """
@@ -166,17 +166,16 @@ def plot_Cd(vel, use_U_inf=False):
     ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "co-", label="Accel total avg")
     """
     
-    t = sum_all_acc(vel, only_corner=True)[1] \
-    if not use_U_inf else sum_all_acc(vel, only_corner=True)[2]
+    t = sum_all_acc(vel, only_corner=True, version=version)[1] \
+    if not use_U_inf else sum_all_acc(vel, only_corner=True, version=version)[2]
     lis = []
     for key in sorted(t.keys()):
         lis.append((t[key][0], key * 10.0))
-    lis = lis[1:-7]
-    print lis
+    lis = lis[1:-7 if vel == "4.0" else -8]
     ax.plot(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), "co-", label="Accel local avg")
     
-    ax.legend()
-    ax.set_xlabel(r"z/H")
-    ax.set_ylabel(r"$\frac{F_D}{\rho A U^2_{\infty}}$", size = 15)
+    ax.legend(loc=2)
+    ax.set_xlabel(r"z/H", size=12)
+    ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 18)
     
     return fig, ax
