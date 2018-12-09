@@ -8,7 +8,7 @@ Created on Tue Jul 17 12:36:31 2018
 
 import tools as tls
 import numpy as np
-import flowtracks.io as ft
+#import flowtracks.io as ft
 from Cd_drag_mesurment import group_avarage_velocity
 
 def calculate_midpoint_derivative(prev, nex, h):

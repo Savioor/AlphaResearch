@@ -6,12 +6,12 @@ Created on Tue Jul 17 12:30:55 2018
 @author: alexey
 """
 
-import flowtracks.io as ft
+#import flowtracks.io as ft
 import numpy as np
 import json
 import matplotlib.pyplot as pplot
 
-root = "/home/ron/Desktop/Alexey/AlphaResearch/"
+root = "C:/Users/theem/Desktop/alpha offline/AlphaResearch/"
 def save_as_json(data, file_name, sort_keys=True, indent=4):
     with open(root + file_name + ".json", "w") as f:
         json.dump(data, f, sort_keys=sort_keys, indent=indent)

@@ -7,7 +7,8 @@ Created on Sun Jul 15 15:19:06 2018
 """
 
 import tools as tls
-import flowtracks.io as ft
+import matplotlib.pyplot as pplot
+#import flowtracks.io as ft
 import numpy as np
 
 air_density = 1.2041 # kg / m^3
@@ -23,6 +24,55 @@ def group_avarage_velocity(data, grouping_func,
         return element.velocity()[i]
     return tls.group_parameter(data, grouping_func, param_f, filt=filt, step=step)
         
+def plot_Cd_Fox():
+    fig, ax = pplot.subplots()
+    vfig, vax = pplot.subplots()
+    drags = [
+        calc_vel_and_drag_from_data_Cd(general + "2.5")["drag_list"][:-7],
+        calc_vel_and_drag_from_data_Cd(general + "4.0")["drag_list"][:-7],
+        calc_vel_and_drag_from_data_Cd(nb + "2.5")["drag_list"],
+        calc_vel_and_drag_from_data_Cd(nb + "4.0")["drag_list"]
+       ]
+    vels = [
+        calc_vel_and_drag_from_data_Cd(general + "2.5")["x_velocities"][:-7],
+        calc_vel_and_drag_from_data_Cd(general + "4.0")["x_velocities"][:-7],
+        calc_vel_and_drag_from_data_Cd(nb + "2.5")["x_velocities"],
+        calc_vel_and_drag_from_data_Cd(nb + "4.0")["x_velocities"]
+    ]
+    lines = [
+        "c+-",
+        "g+-",
+        "co--",
+        "go--"
+    ]
+    labels = [
+        "2.5 m/s total avg",
+        "4.0 m/s total avg",
+        "2.5 m/s near building avg",
+        "4.0 m/s near building avg"
+    ]
+    vel = [
+        2.5,
+        4.0,
+        2.5,
+        4.0
+    ]
+    for t in xrange(len(drags)):
+        ax.plot(map(lambda a: a[1] * 10.0, drags[t]),
+                map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (vel[t] ** 2)), drags[t]), lines[t], label=labels[t])
+        vax.plot(map(lambda a: a[1] * 10.0, vels[t]),
+                 map(lambda a: a[0], drags[t]), lines[t],
+                 label=labels[t])
+
+    vax.legend()
+    vax.set_xlabel("z/H")
+    vax.set_ylabel("Velocity (m/s)")
+    ax.legend()
+    ax.set_xlabel("z/H")
+    ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 16)
+
+    return fig, ax, vfig, vax
+
 
 def estimate_drag_Cd(velocity, area, density=air_density, coefficient=drag_coefficient):
     return 0.5 * coefficient * (velocity ** 2) * area * density
@@ -71,3 +121,8 @@ def calc_vel_and_drag_from_data_Cd(data, area=0.0005, acc=minimum_acc):
     ret["drag"] = reduce(lambda a, b: a + b[0], drag_list, 0)
     
     return ret
+
+fig, ax, vfig, vax = plot_Cd_Fox()
+fig.show()
+vfig.show()
+pplot.show()

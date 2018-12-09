@@ -146,7 +146,7 @@ def plot_Cd(vel, use_U_inf=False, version = ""):
         t = calc_vel_and_drag_from_data_Cd(general + vel)["drag_list"]
         t = t[:-7]
         ax.plot(map(lambda a: a[1] * 10.0, t), map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (float(vel)**2)), t), "bo-", label="Fox et. al.")
-    
+
     t = get_drag_raupach(vel, area=area_by_volume)["Cd br"] \
     if not use_U_inf else get_drag_raupach(vel, area=area_by_volume)["rey stress gradient"]
     lis = []
@@ -173,9 +173,50 @@ def plot_Cd(vel, use_U_inf=False, version = ""):
         lis.append((t[key][0], key * 10.0))
     lis = lis[1:-7 if vel == "4.0" else -8]
     ax.plot(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), "co-", label="Accel local avg")
-    
+
     ax.legend(loc=2)
     ax.set_xlabel(r"z/H", size=12)
     ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 18)
     
     return fig, ax
+
+def plot_rey_stress():
+    fig, ax = pplot.subplots()
+    rs25 = get_drag_raupach("2.5", area=area_by_volume)["rey stress gradient"]
+    rs40 = get_drag_raupach("4.0", area=area_by_volume)["rey stress gradient"]
+    lis = []
+    for key in sorted(rs25.keys()):
+        lis.append((rs25[key] / (-0.5 * (2.5 ** 2) * area_by_volume), key / 10.0))
+    lis = lis[:-6]
+    ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "cs-", label="2.5 m/s")
+    lis = []
+    for key in sorted(rs40.keys()):
+        lis.append((rs40[key] / (-0.5 * (2.5 ** 2) * area_by_volume), key / 10.0))
+    lis = lis[:-6]
+    ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "gs-", label="4.0 m/s")
+
+    ax.legend()
+    ax.set_xlabel("z/H")
+    ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 16)
+
+    return fig, ax
+
+fig, ax = pplot.subplots()
+
+vel = "2.5"
+for i in xrange(2):
+    t = sum_all_acc(vel, only_corner=True, version="2")[1] \
+        if not True else sum_all_acc(vel, only_corner=True, version="2")[2]
+    lis = []
+    for key in sorted(t.keys()):
+        lis.append((t[key][0], key * 10.0))
+    lis = lis[1:-7 if vel == "4.0" else -8]
+    ax.plot(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), "co-" if vel == "2.5" else "go-", label=vel + " m/s")
+    vel = "4.0"
+
+ax.legend(loc=2)
+ax.set_xlabel(r"z/H", size=12)
+ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size=18)
+
+fig.show()
+pplot.show()
