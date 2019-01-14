@@ -11,7 +11,7 @@ import numpy as np
 import json
 import matplotlib.pyplot as pplot
 
-root = "C:/Users/theem/Desktop/alpha offline/AlphaResearch/"
+root = "C:/Users/theem/Desktop/Projects/alpha offline/AlphaResearch/"
 def save_as_json(data, file_name, sort_keys=True, indent=4):
     with open(root + file_name + ".json", "w") as f:
         json.dump(data, f, sort_keys=sort_keys, indent=indent)
@@ -153,7 +153,7 @@ def group_parameter(data, grouping_func, parameter_func,
         if c % step != 0:
             continue
         if c % 200000 == 0:
-            print "200,000 units are ready, with a million more well on the way"
+            print("200,000 units are ready, with a million more well on the way")
         if not filt(element):
             continue
         point_count = len(element.velocity())

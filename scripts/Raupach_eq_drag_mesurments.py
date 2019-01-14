@@ -189,19 +189,19 @@ def auto_disp_stress_calculator(speed):
     high_stress = get_dispersive_stress(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_high.h5"),
                         "raupach_data/avg_vel_by_loc_" + speed,
                         "cd_data/avg_vel_by_height_" + speed)
-    print "Stress higher calculated"
-    print high_stress
+    print("Stress higher calculated")
+    print(high_stress)
     
     low_stress = get_dispersive_stress(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5"),
                         "raupach_data/avg_vel_by_loc_" + speed,
                         "cd_data/avg_vel_by_height_" + speed)
-    print "Stress lower calculeted"
-    print low_stress
+    print("Stress lower calculeted")
+    print(low_stress)
     
     tls.save_as_json(high_stress, "raupach_data/disp_stress_higher_" + speed)
     tls.save_as_json(low_stress, "raupach_data/disp_stress_lower_" + speed)
     
-    merged_stress = tls.merge_dict(high_stress, low_stress, 
+    merged_stress = tls.merge_dict(high_stress, low_stress,
                                lambda a, b: [(a[0] * a[1] + b[0] * b[1]) / (a[1] + b[1]),
                                              a[1] + b[1]])
     
@@ -213,13 +213,13 @@ def auto_rey_stress_calculator(speed, skip_vel = True):
     
     high_stress = get_reynolds_stress(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_high.h5"),
                         "raupach_data/avg_vel_by_loc_" + speed)
-    print "Stress higher calculated"
-    print high_stress
+    print("Stress higher calculated")
+    print(high_stress)
     
     low_stress = get_reynolds_stress(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5"),
                         "raupach_data/avg_vel_by_loc_" + speed)
-    print "Stress lower calculeted"
-    print low_stress
+    print("Stress lower calculeted")
+    print(low_stress)
     
     tls.save_as_json(high_stress, "raupach_data/rey_stress_higher_" + speed)
     tls.save_as_json(low_stress, "raupach_data/rey_stress_lower_" + speed)
@@ -235,14 +235,14 @@ def get_velocity_by_loc(speed):
     higher_avg_vel = group_avarage_velocity(
         ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_high.h5")
                 , tls.group_by_location)
-    print "Higher vel calculated"
-    print higher_avg_vel
+    print("Higher vel calculated")
+    print(higher_avg_vel)
         
     lower_avg_vel = group_avarage_velocity(
             ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5")
             , tls.group_by_location)
-    print "Lower vel calculated"
-    print lower_avg_vel
+    print("Lower vel calculated")
+    print(lower_avg_vel)
         
     higer_dic = {}
     for key in higher_avg_vel.keys():

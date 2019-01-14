@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as pplot
 from Raupach_eq_drag_mesurments import get_drag_raupach, area_by_volume
 from acc_mesurments import sum_all_acc
-from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, air_density
+from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, air_density, nb
 
 def heat_map_velocity(vel):
     fig, ax = pplot.subplots()
@@ -111,6 +111,28 @@ def quiver_velocity(vel):
     
     return fig, ax
 
+
+def plot_velocity():
+    fig, ax = pplot.subplots()
+
+    data2 = calc_vel_and_drag_from_data_Cd(general + "2.5")["x_velocities"][:-7]
+    data2nb = calc_vel_and_drag_from_data_Cd(nb + "2.5")["x_velocities"]
+
+    data4 = calc_vel_and_drag_from_data_Cd(general + "4.0")["x_velocities"][:-7]
+    data4nb = calc_vel_and_drag_from_data_Cd(nb + "4.0")["x_velocities"]
+
+    ax.plot(list(map(lambda a: a[1] * 10, data2)), list(map(lambda a: a[0], data2)), "c+-", label="2.5 m/s")
+    ax.plot(list(map(lambda a: a[1] * 10, data4)), list(map(lambda a: a[0], data4)), "g+-", label="4.0 m/s")
+    ax.plot(list(map(lambda a: a[1] * 10, data2nb)), list(map(lambda a: a[0], data2nb)), "co--", label="2.5 m/s near building")
+    ax.plot(list(map(lambda a: a[1] * 10, data4nb)), list(map(lambda a: a[0], data4nb)), "go--", label="4.0 m/s near building")
+
+    ax.set_ylabel("Velocity (m/s)")
+    ax.set_xlabel("z/H")
+    ax.legend()
+
+    return fig, ax
+
+
 def plot_drag(vel, mass = air_density * 0.1 * 0.01 * 0.15):
     fig, ax = pplot.subplots()
     
@@ -201,22 +223,6 @@ def plot_rey_stress():
 
     return fig, ax
 
-fig, ax = pplot.subplots()
-
-vel = "2.5"
-for i in xrange(2):
-    t = sum_all_acc(vel, only_corner=True, version="2")[1] \
-        if not True else sum_all_acc(vel, only_corner=True, version="2")[2]
-    lis = []
-    for key in sorted(t.keys()):
-        lis.append((t[key][0], key * 10.0))
-    lis = lis[1:-7 if vel == "4.0" else -8]
-    ax.plot(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), "co-" if vel == "2.5" else "go-", label=vel + " m/s")
-    vel = "4.0"
-
-ax.legend(loc=2)
-ax.set_xlabel(r"z/H", size=12)
-ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size=18)
-
+fig, ax = plot_velocity()
 fig.show()
 pplot.show()

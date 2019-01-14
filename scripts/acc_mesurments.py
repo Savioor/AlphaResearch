@@ -42,21 +42,21 @@ def get_acc2(vel):
     for key in acc_low.keys():
         acc_to_save[str(key)] = [acc_low[key][0].tolist(), acc_low[key][1]]
     tls.save_as_json(acc_to_save, "accel2_by_x_and_z_" + vel + "_lower")
-    print "Lower done"
+    print("Lower done")
 
     acc_high = group_avarage_acc(sh, group_by_x_n_z2)
     acc_to_save = {}
     for key in acc_high.keys():
         acc_to_save[str(key)] = [acc_high[key][0].tolist(), acc_high[key][1]]
     tls.save_as_json(acc_to_save, "accel2_by_x_and_z_" + vel + "_higher")
-    print "Higher done"
+    print("Higher done")
 
     m = tls.merge_dict(tls.read_json("accel2_by_x_and_z_" + vel + "_higher"),
                        tls.read_json("accel2_by_x_and_z_" + vel + "_lower"),
                        lambda a, b: [((np.array(a[0]) * a[1] + np.array(b[0]) * b[1]) / (a[1] + b[1])).tolist(),
                                      a[1] + b[1]])
     tls.save_as_json(m, "accel2_by_x_and_z_" + vel)
-    print "DONE"
+    print("DONE")
 
 
 def get_acc(vel):
@@ -68,21 +68,21 @@ def get_acc(vel):
     for key in acc_low.keys():
         acc_to_save[key] = [acc_low[key][0].tolist(), acc_low[key][1]]
     tls.save_as_json(acc_to_save, "accel_by_x_and_z_" + vel + "_lower")
-    print "Lower done"
+    print("Lower done")
 
     acc_high = group_avarage_acc(sh, group_by_x_n_z)
     acc_to_save = {}
     for key in acc_high.keys():
         acc_to_save[key] = [acc_high[key][0].tolist(), acc_high[key][1]]
     tls.save_as_json(acc_to_save, "accel_by_x_and_z_" + vel + "_higher")
-    print "Higher done"
+    print("Higher done")
 
     m = tls.merge_dict(tls.read_json("accel_by_x_and_z_" + vel + "_higher"),
                        tls.read_json("accel_by_x_and_z_" + vel + "_lower"),
                        lambda a, b: [((np.array(a[0]) * a[1] + np.array(b[0]) * b[1]) / (a[1] + b[1])).tolist(),
                                      a[1] + b[1]])
     tls.save_as_json(m, "accel_by_x_and_z_" + vel)
-    print "DONE"
+    print("DONE")
 
 
 def draw_quiver(vel):
@@ -196,7 +196,7 @@ def sum_all_acc(vel, area=0.05 * 0.01, mult=mass, only_corner=False, version="")
         if only_corner and -float(key.split(", ")[0].replace('(', "")) <= 0.12:
             continue
 
-        print key
+        print(key)
 
         h = float(key.split(", ")[1].replace(")", ""))
         if h in total.keys():

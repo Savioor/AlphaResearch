@@ -6,6 +6,7 @@ Created on Sun Jul 15 15:19:06 2018
 @author: alexey
 """
 
+from functools import reduce
 import tools as tls
 import matplotlib.pyplot as pplot
 #import flowtracks.io as ft
@@ -57,11 +58,11 @@ def plot_Cd_Fox():
         2.5,
         4.0
     ]
-    for t in xrange(len(drags)):
-        ax.plot(map(lambda a: a[1] * 10.0, drags[t]),
-                map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (vel[t] ** 2)), drags[t]), lines[t], label=labels[t])
-        vax.plot(map(lambda a: a[1] * 10.0, vels[t]),
-                 map(lambda a: a[0], drags[t]), lines[t],
+    for t in range(len(drags)):
+        ax.plot(list(map(lambda a: a[1] * 10.0, drags[t])),
+                list(map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (vel[t] ** 2)), drags[t])), lines[t], label=labels[t])
+        vax.plot(list(map(lambda a: a[1] * 10.0, vels[t])),
+                 list(map(lambda a: a[0], drags[t])), lines[t],
                  label=labels[t])
 
     vax.legend()
