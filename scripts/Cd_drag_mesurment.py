@@ -122,8 +122,3 @@ def calc_vel_and_drag_from_data_Cd(data, area=0.0005, acc=minimum_acc):
     ret["drag"] = reduce(lambda a, b: a + b[0], drag_list, 0)
     
     return ret
-
-fig, ax, vfig, vax = plot_Cd_Fox()
-fig.show()
-vfig.show()
-pplot.show()

@@ -55,7 +55,7 @@ def heat_map_velocity(vel):
         ax.text(-x / 10.0 + 0.05, z / 10.0 + 0.05, round(-acc[key][0][0], 1), ha="center",
                 va="center", color="w", size=7.8)
     
-    for i in xrange(11):
+    for i in range(11):
         if i <= 5:
             mat[i][7] = [1, 1, 1]
         mat[i][15] = [1, 1, 1]
@@ -96,8 +96,8 @@ def quiver_velocity(vel):
 
     Y = np.zeros((18, 18))
     X = np.zeros((18, 18))
-    for i in xrange(len(Y)):
-        for j in xrange(len(Y)):
+    for i in range(len(Y)):
+        for j in range(len(Y)):
             Y[i, j] = i / 10.0
             X[i, j] = j / 10.0
             if matcount[i, j] != 0:

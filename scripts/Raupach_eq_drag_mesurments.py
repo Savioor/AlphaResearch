@@ -70,7 +70,7 @@ def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accur
     skds = sorted(disp_stress.keys())
     
     if not linear:
-        for h in xrange(0, 16, 1):
+        for h in range(0, 16, 1):
             key = h + 0.5
             
             v = x_dir_vel
@@ -100,7 +100,7 @@ def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accur
                 else:
                     dds[key] = calculate_midpoint_derivative(ds[key - 1], ds[key + 1], 0.01)
     else:
-        for h in xrange(0, 16, 1):
+        for h in range(0, 16, 1):
             key = h + 0.5
             dv[key] = (x_dir_vel[skv[-1]] - x_dir_vel[skv[0]]) / ((skv[-1] - skv[0]) / 100.0)
             drs[key] = (rey_stress[skrs[-1]] - rey_stress[skrs[0]]) / ((skrs[-1] - skrs[0]) / 100.0)
@@ -125,7 +125,7 @@ def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accur
     drag = {}
     z_times_dv = {}
     
-    for h in xrange(0, 10, 1):
+    for h in range(0, 10, 1):
         key = h + 0.5
         if key in x_dir_vel.keys() and key in rey_stress.keys() and key in disp_stress.keys():
             z_times_dv[key] = z_dir_vel[key]*dv[key]    

@@ -184,7 +184,7 @@ my test:
 mass = air_density * 0.01 * 0.01 * 0.1
 
 
-def sum_all_acc(vel, area=0.05 * 0.01, mult=mass, only_corner=False, version=""):
+def sum_all_acc(vel, area=0.05 * 0.01, mult=mass, only_corner=True, version="2"):
     acc = tls.read_json("accel" + version + "_by_x_and_z_" + vel)
     total = {}
     count = {}
@@ -195,8 +195,6 @@ def sum_all_acc(vel, area=0.05 * 0.01, mult=mass, only_corner=False, version="")
 
         if only_corner and -float(key.split(", ")[0].replace('(', "")) <= 0.12:
             continue
-
-        print(key)
 
         h = float(key.split(", ")[1].replace(")", ""))
         if h in total.keys():
