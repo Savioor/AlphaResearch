@@ -1,10 +1,11 @@
 import flowtracks.io as ft
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, nb
 from tools import save_as_json, read_json, merge_dict
+from math import sqrt
 
 root = "C:\\Users\\theem\\Desktop\\Projects\\alpha offline\\Data\\"
 def main():
-    """"save_as_json({"some_key": 5, "another_key": {"and another": 3, "and another one": 1}}, "test")
+    save_as_json({"some_key": 5, "another_key": {"and another": 3, "and another one": 1}}, "test")
     lower_25 = get_std_v(ft.Scene(root + "traj_2.5_low.h5"), "2.5")
     save_as_json(lower_25, "sum_of_sqr_diff_from_avg_lower_2.5")
     higher_25 = get_std_v(ft.Scene(root + "traj_2.5_high.h5"), "2.5")
@@ -14,7 +15,7 @@ def main():
             a[1] + b[1]])
     save_as_json(merged_25, "sum_of_sqr_diff_from_avg_2.5")
     
-    print "\n2.5 done!\n"" """
+    print "\n2.5 done!\n"
     
     lower_40 = get_std_v(ft.Scene(root + "traj_4.0_low.h5"), "4.0")
     save_as_json(lower_40, "sum_of_sqr_diff_from_avg_lower_4.0")
@@ -23,7 +24,13 @@ def main():
     merged_40 = merge_dict(lower_40, higher_40, 
             lambda a, b: [a[0] + b[0], a[1] + b[1]])
     save_as_json(merged_40, "sum_of_sqr_diff_from_avg_4.0")
-    
+   
+std_root = "sum_of_sqr_diff_from_avg_"
+def get_std_h(h, vel):
+    data = read_json(std_root + str(vel))
+    relevant = str(filter(lambda a: abs(h - float(a)) < 0.0001, data.keys())[0])
+    print relevant
+    return sqrt(data[relevant][0] / (data[relevant][1] - 1))
     
 
 def group_by_height(traj, i, start, end, jump, unsafe = False):

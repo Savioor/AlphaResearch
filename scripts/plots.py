@@ -12,6 +12,7 @@ import matplotlib.pyplot as pplot
 from Raupach_eq_drag_mesurments import get_drag_raupach, area_by_volume
 from acc_mesurments import sum_all_acc
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, air_density, nb
+from get_statistics import get_std_h
 
 def heat_map_velocity(vel):
     fig, ax = pplot.subplots()
@@ -120,8 +121,16 @@ def plot_velocity():
 
     data4 = calc_vel_and_drag_from_data_Cd(general + "4.0")["x_velocities"][:-7]
     data4nb = calc_vel_and_drag_from_data_Cd(nb + "4.0")["x_velocities"]
-
-    ax.plot(list(map(lambda a: a[1] * 10, data2)), list(map(lambda a: a[0], data2)), "c+-", label="2.5 m/s")
+    
+    print data2
+    ax.errorbar(
+    list(map(lambda a: a[1] * 10, data2)),
+    list(map(lambda a: a[0], data2)),
+    "c+-",
+    label="2.5 m/s",
+    xerr=list(map(lambda a: float(get_std_h(a[1], "2.5")), data2))
+    )
+    
     ax.plot(list(map(lambda a: a[1] * 10, data4)), list(map(lambda a: a[0], data4)), "g+-", label="4.0 m/s")
     ax.plot(list(map(lambda a: a[1] * 10, data2nb)), list(map(lambda a: a[0], data2nb)), "co--", label="2.5 m/s near building")
     ax.plot(list(map(lambda a: a[1] * 10, data4nb)), list(map(lambda a: a[0], data4nb)), "go--", label="4.0 m/s near building")
