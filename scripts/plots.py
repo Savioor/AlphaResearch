@@ -122,14 +122,14 @@ def plot_velocity():
     data4 = calc_vel_and_drag_from_data_Cd(general + "4.0")["x_velocities"][:-7]
     data4nb = calc_vel_and_drag_from_data_Cd(nb + "4.0")["x_velocities"]
     
-    print data2
+    print map(lambda a: get_error("vel_mult_avgs_2.5", a[1]), data2)
+    
     ax.errorbar(
     list(map(lambda a: a[1] * 10, data2)),
     list(map(lambda a: a[0], data2)),
-    "c+-",
+    #"c+-",
     label="2.5 m/s",
-    xerr=list(map(lambda a: float(get_std_h(a[1], "2.5")), data2))
-    )
+    yerr=get_error_bars("vel_mult_avgs_2.5", data2))
     
     ax.plot(list(map(lambda a: a[1] * 10, data4)), list(map(lambda a: a[0], data4)), "g+-", label="4.0 m/s")
     ax.plot(list(map(lambda a: a[1] * 10, data2nb)), list(map(lambda a: a[0], data2nb)), "co--", label="2.5 m/s near building")
@@ -142,6 +142,23 @@ def plot_velocity():
     return fig, ax
 
 
+def get_error_bars(file_name, data):
+    lower_err = []
+    upper_err = []
+    for v in data:
+        err = get_error(file_name, v[1])
+        print v[0] - err[0], err[1] - v[0]
+        lower_err.append(abs(v[0] - err[0]))
+        upper_err.append(abs(err[1] - v[0]))
+    return [lower_err, upper_err]
+
+
+def get_error(file_name, h):
+    data = tls.read_json(file_name)
+    relevant_array = sorted(data[filter(lambda a: abs(float(a) - h) < 0.001, data.keys())[0]], key=lambda a: a[0])
+    return np.array([relevant_array[0][0], relevant_array[-1][0]])
+
+    
 def plot_drag(vel, mass = air_density * 0.1 * 0.01 * 0.15):
     fig, ax = pplot.subplots()
     
