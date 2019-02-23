@@ -17,6 +17,66 @@ area_tall = 0.1 * 0.05 # cm^2
 area_short = 0.05 * 0.05 # cm^2
 drag_coefficient = 2.05 
 
+def get_error_bars(file_name, data, air_density, velocity):
+    lower_err = []
+    upper_err = []
+    for v in data:
+        err = get_error_cd_modified(file_name, v[1])
+        lower_err.append(abs(v[0] - err[0]) / (0.5 * air_density * 0.01 * 0.05 * (velocity ** 2)))
+        upper_err.append(abs(err[1] - v[0]) / (0.5 * air_density * 0.01 * 0.05 * (velocity ** 2)))
+    return [lower_err, upper_err]
+
+
+def get_error_cd_modified(file_name, h):
+    data = tls.read_json(file_name)
+    for key in data.keys():
+        splat = key.split(" - ")
+        firstNum = float(splat[0])
+        secondNum = float(splat[1])
+        if h > firstNum and h < secondNum:
+            rel_array = data[key]
+            rel_array.sort(key=lambda a: a[0])
+            return np.array(
+            [
+            (estimate_drag_Cd(rel_array[0][0], 0.0005)),
+            (estimate_drag_Cd(rel_array[-1][0], 0.0005))
+            ]
+            )
+
+
+def estimate_drag_Cd(velocity, area, density=air_density, coefficient=drag_coefficient):
+    return 0.5 * coefficient * (velocity ** 2) * area * density
+
+minimum_acc = 10 ** 4
+general = "cd_data/avg_vel_by_height_"
+nb = "cd_data/nb_"
+def calc_vel_and_drag_from_data_Cd(data, area=0.0005, acc=minimum_acc):
+    ret = {}
+    
+    if type(data) is str:
+        data = tls.read_json(data)
+        
+    x_vel = []
+    for key in sorted(data.keys()):
+        if data[key][1] < acc or key == "no group":
+            continue
+        
+        key_splat = key.split(' - ')
+        height = (float(key_splat[0]) + float(key_splat[1])) / 2
+        x_vel.append([-data[key][0][0], height])
+    
+    ret["x_velocities"] = x_vel
+    
+    drag_list = []
+    for elem in x_vel:
+        drag_list.append([estimate_drag_Cd(elem[0], area), elem[1]])
+    
+    ret["drag_list"] = drag_list
+    
+    ret["drag"] = reduce(lambda a, b: a + b[0], drag_list, 0)
+    
+    return ret
+
 
 def group_avarage_velocity(data, grouping_func,
                            filt=lambda a: True, 
@@ -58,9 +118,19 @@ def plot_Cd_Fox():
         2.5,
         4.0
     ]
+    error_data = [
+        "Statistics/vel_mult_avgs_2.5",
+        "Statistics/vel_mult_avgs_4.0",
+        "Statistics/vel_nb_mult_avgs_2.5",
+        "Statistics/vel_nb_mult_avgs_4.0"
+    ]
     for t in range(len(drags)):
-        ax.plot(list(map(lambda a: a[1] * 10.0, drags[t])),
-                list(map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (vel[t] ** 2)), drags[t])), lines[t], label=labels[t])
+        ax.errorbar(list(map(lambda a: a[1] * 10.0, drags[t])),
+                list(map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (vel[t] ** 2)), drags[t])), 
+                fmt=lines[t], 
+                label=labels[t],
+                yerr=get_error_bars(error_data[t], drags[t], air_density, vel[t]))
+        
         vax.plot(list(map(lambda a: a[1] * 10.0, vels[t])),
                  list(map(lambda a: a[0], drags[t])), lines[t],
                  label=labels[t])
@@ -74,10 +144,10 @@ def plot_Cd_Fox():
 
     return fig, ax, vfig, vax
 
-
-def estimate_drag_Cd(velocity, area, density=air_density, coefficient=drag_coefficient):
-    return 0.5 * coefficient * (velocity ** 2) * area * density
-
+fig, ax, a, b = plot_Cd_Fox()
+fig.show()
+pplot.show()
+    
 def get_average_velocity(speed):
     low_speed = group_avarage_velocity(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5"),
                            lambda t, i: tls.group_by_height(t, i, 0, 0.18, 0.01))
@@ -93,32 +163,3 @@ def get_average_velocity(speed):
     
     tls.save_as_json(mrg, "cd_data/avg_vel_by_height_" + speed)
     
-minimum_acc = 10 ** 4
-general = "cd_data/avg_vel_by_height_"
-nb = "cd_data/nb_"
-def calc_vel_and_drag_from_data_Cd(data, area=0.0005, acc=minimum_acc):
-    ret = {}
-    
-    if type(data) is str:
-        data = tls.read_json(data)
-        
-    x_vel = []
-    for key in sorted(data.keys()):
-        if data[key][1] < acc or key == "no group":
-            continue
-        
-        key_splat = key.split(' - ')
-        height = (float(key_splat[0]) + float(key_splat[1])) / 2
-        x_vel.append([-data[key][0][0], height])
-    
-    ret["x_velocities"] = x_vel
-    
-    drag_list = []
-    for elem in x_vel:
-        drag_list.append([estimate_drag_Cd(elem[0], area), elem[1]])
-    
-    ret["drag_list"] = drag_list
-    
-    ret["drag"] = reduce(lambda a, b: a + b[0], drag_list, 0)
-    
-    return ret

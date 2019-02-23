@@ -38,7 +38,6 @@ where insted of 0 you put values for start end and jump
 """
 def group_by_height(traj, i, start, end, jump, unsafe = False):
     val = start
-    
     if (start > 0.1 or end > 0.2 or jump > 0.05) and not unsafe:
         print("start = {}, end = {}, jump = {}. all in cm. are you sure you are correct?".format(start, end, jump)
               + " if so please use unsafe mode")

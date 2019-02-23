@@ -1,22 +1,38 @@
 import flowtracks.io as ft
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, nb
-from tools import save_as_json, read_json, merge_dict
+from tools import save_as_json, read_json, merge_dict, group_by_height, is_in_corner
 from math import sqrt
 import random
 
 root = "C:\\Users\\theem\\Desktop\\Projects\\alpha offline\\Data\\"
 def main():
-    lower25 = read_json("acc_mult_avgs_lower_2.5")
-    higher25 = read_json("acc_mult_avgs_higher_2.5")
-    save_as_json(merge_dict(lower25, higher25, merge_long_dict), "acc_mult_avgs_2.5")
-    lower40 = read_json("acc_mult_avgs_lower_4.0")
-    higher40 = read_json("acc_mult_avgs_higher_4.0")
-    save_as_json(merge_dict(lower40, higher40, merge_long_dict), "acc_mult_avgs_4.0")
+    
+    lower25 = read_json("Statistics/vel_nb_mult_avgs_higher_2.5")
+    higher25 = read_json("Statistics/vel_nb_mult_avgs_lower_2.5")
+    save_as_json(merge_dict(lower25, higher25, merge_long_dict), "Statistics/vel_nb_mult_avgs_2.5")
+    
+    lower40 = read_json("Statistics/vel_nb_mult_avgs_higher_4.0")
+    higher40 = read_json("Statistics/vel_nb_mult_avgs_lower_4.0")
+    save_as_json(merge_dict(lower40, higher40, merge_long_dict), "Statistics/vel_nb_mult_avgs_4.0")
+      
+    """
+    print "doing vel 2"
+    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_2.5_high.h5")), "Statistics/vel_w_mult_avgs_higher_2.5")
+    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_2.5_low.h5")), "Statistics/vel_w_mult_avgs_lower_2.5")
+    print "2.5 done!"
+    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_4.0_high.h5")), "Statistics/vel_w_mult_avgs_higher_4.0")
+    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_4.0_low.h5")), "Statistics/vel_w_mult_avgs_lower_4.0")
+    """ 
+    
+
 
          
 def merge_long_dict(elem1, elem2):
     return [
-    [(elem1[i][0]*elem1[i][1] + elem1[i][0]*elem1[i][1]) / (elem1[i][1] + elem2[i][1] if elem1[i][1] + elem2[i][1] != 0 else 1),
+    [
+    (elem1[i][0]*elem1[i][1] + elem2[i][0]*elem2[i][1]) 
+    / (elem1[i][1] + elem2[i][1] if elem1[i][1] + elem2[i][1] != 0 else 1),
+    
     elem1[i][1] + elem2[i][1]
     ] for i in xrange(len(elem1))]
 
@@ -68,6 +84,54 @@ def average_acc_in_groups(data,
     
     return total 
 
+def average_w_vel_in_groups(data,
+            filt=lambda a: True, 
+            step = 1,
+            groups=10):
+    count = {}
+    total = {}
+    iterable = None
+    c = 0
+    
+    if type(data) is ft.Scene:
+        iterable = data.iter_trajectories()
+    else:
+        iterable = data
+    
+    grouping_func = lambda t, i: group_by_height(t, i, 0, 0.18, 0.01)
+    
+    print "Started running"
+    
+    for element in iterable:
+        c += 1
+        if c % step != 0:
+            continue
+        if c % 200000 == 0:
+            print("200,000 units are ready, with a million more well on the way")
+        if not filt(element):
+            continue
+            
+        point_count = len(element.velocity())
+        
+        for i in xrange(point_count):
+            loc = grouping_func(element, i)
+            if loc in count.keys():
+                home_ind = random.choice(xrange(groups))
+                count[loc][home_ind] += 1.0
+                total[loc][home_ind] += element.velocity()[i][1]
+         
+            else:
+                count[loc] = [0.0 for j in xrange(groups)]
+                total[loc] = [0.0 for j in xrange(groups)]
+                home_ind = random.choice(xrange(groups))
+                count[loc][home_ind] += 1.0
+                total[loc][home_ind] += element.velocity()[i][1]
+    
+    for key in total.keys():
+        total[key] = [(total[key][i] / (count[key][i] if count[key][i] != 0 else 1.0), count[key][i]) for i in xrange(groups)]
+    
+    return total
+    
 def average_vel_in_groups(data,
             filt=lambda a: True, 
             step = 1,
@@ -94,6 +158,7 @@ def average_vel_in_groups(data,
             print("200,000 units are ready, with a million more well on the way")
         if not filt(element):
             continue
+            
         point_count = len(element.velocity())
         
         for i in xrange(point_count):
@@ -122,21 +187,6 @@ def get_std_h(h, vel):
     print relevant
     return sqrt(data[relevant][0] / (data[relevant][1] - 1))
     
-
-def group_by_height(traj, i, start, end, jump, unsafe = False):
-    val = start
-    
-    if (start > 0.1 or end > 0.2 or jump > 0.05) and not unsafe:
-        print("start = {}, end = {}, jump = {}. all in m. are you sure you are correct?".format(start, end, jump)
-              + " if so please use unsafe mode")
-        raise Exception('Suspicious values inserted in unsafe mode')
-    
-    while (val <= end):
-        if val <= traj.pos()[i, 1] < min(val + jump, end):
-            return (val + min(val + jump, end)) * 0.5
-        val += jump
-    
-    return "no group"
 
 def find_avg(h, file_path):
     avgs = calc_vel_and_drag_from_data_Cd(file_path)["x_velocities"]
