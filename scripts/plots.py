@@ -251,7 +251,7 @@ def plot_rey_stress():
     rs25 = get_drag_raupach("2.5", area=area_by_volume)["rey stress gradient"]
     rs40 = get_drag_raupach("4.0", area=area_by_volume)["rey stress gradient"]
     lis = []
-    for key in sorted(rs25.keys()):
+    for key in sorted(rs25.keys()z):
         lis.append((rs25[key] / (-0.5 * (2.5 ** 2) * area_by_volume), key / 10.0))
     lis = lis[:-6]
     ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "cs-", label="2.5 m/s")
@@ -266,7 +266,3 @@ def plot_rey_stress():
     ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 16)
 
     return fig, ax
-
-fig, ax = plot_velocity()
-fig.show()
-pplot.show()

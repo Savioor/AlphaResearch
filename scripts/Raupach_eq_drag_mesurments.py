@@ -8,7 +8,7 @@ Created on Tue Jul 17 12:36:31 2018
 
 import tools as tls
 import numpy as np
-#import flowtracks.io as ft
+import flowtracks.io as ft
 from Cd_drag_mesurment import group_avarage_velocity
 
 def calculate_midpoint_derivative(prev, nex, h):
@@ -231,32 +231,40 @@ def auto_rey_stress_calculator(speed, skip_vel = True):
     tls.save_as_json(merged_stress, "raupach_data/rey_stress_" + speed)
 
 
-def get_velocity_by_loc(speed):
+def get_velocity_by_loc(speed, groups=1, prefix=""):
+
     higher_avg_vel = group_avarage_velocity(
-        ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_high.h5")
-                , tls.group_by_location)
+        ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_high.h5")
+                , tls.group_by_location, groups=groups)
     print("Higher vel calculated")
-    print(higher_avg_vel)
-        
-    lower_avg_vel = group_avarage_velocity(
-            ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5")
-            , tls.group_by_location)
-    print("Lower vel calculated")
-    print(lower_avg_vel)
         
     higer_dic = {}
     for key in higher_avg_vel.keys():
         higer_dic[str(key).replace("-0.0", "0.0")] = higher_avg_vel[key]
         
+        
+    tls.save_as_json(higer_dic, "raupach_data/" + prefix + "avg_vel_by_loc_higher_" + speed)
+
+        
+    lower_avg_vel = group_avarage_velocity(
+            ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_low.h5")
+            , tls.group_by_location, groups=groups)
+    print("Lower vel calculated")
+        
+        
     lower_dic = {}
     for key in lower_avg_vel.keys():
         lower_dic[str(key).replace("-0.0", "0.0")] = lower_avg_vel[key]
     
-    tls.save_as_json(higer_dic, "raupach_data/avg_vel_by_loc_higher_" + speed)
-    tls.save_as_json(lower_dic, "raupach_data/avg_vel_by_loc_lower_" + speed)
+    tls.save_as_json(lower_dic, "raupach_data/" + prefix + "avg_vel_by_loc_lower_" + speed)
     
     merged = tls.merge_dict(lower_dic, higer_dic, 
                lambda a, b: [((np.array(a[0]) * a[1] 
                + np.array(b[0]) * b[1]) / (a[1] + b[1])).tolist(), a[1] + b[1]])
     
-    tls.save_as_json(merged, "raupach_data/avg_vel_by_loc_" + speed)
+    tls.save_as_json(merged, "raupach_data/" + prefix + "avg_vel_by_loc_" + speed)
+
+if __name__ == "__main__":
+    print "started"
+    get_velocity_by_loc("2.5", groups=10, prefix="goruped_")
+    

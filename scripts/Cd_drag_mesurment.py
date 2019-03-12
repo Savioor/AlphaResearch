@@ -9,7 +9,7 @@ Created on Sun Jul 15 15:19:06 2018
 from functools import reduce
 import tools as tls
 import matplotlib.pyplot as pplot
-#import flowtracks.io as ft
+import flowtracks.io as ft
 import numpy as np
 
 air_density = 1.2041 # kg / m^3
@@ -80,10 +80,11 @@ def calc_vel_and_drag_from_data_Cd(data, area=0.0005, acc=minimum_acc):
 
 def group_avarage_velocity(data, grouping_func,
                            filt=lambda a: True, 
-                           step = 1):
+                           step = 1,
+                           groups=1):
     def param_f(element, i):
         return element.velocity()[i]
-    return tls.group_parameter(data, grouping_func, param_f, filt=filt, step=step)
+    return tls.mult_group_parameter(data, grouping_func, param_f, filt=filt, step=step, groups=groups)
         
 def plot_Cd_Fox():
     fig, ax = pplot.subplots()

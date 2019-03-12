@@ -10,6 +10,8 @@ Created on Tue Jul 17 12:30:55 2018
 import numpy as np
 import json
 import matplotlib.pyplot as pplot
+import flowtracks.io as ft
+import random
 
 root = "C:/Users/theem/Desktop/Projects/alpha offline/AlphaResearch/"
 def save_as_json(data, file_name, sort_keys=True, indent=4):
@@ -189,6 +191,54 @@ def plot_def(prop, filt = lambda a: a, start = 0, end = None, mod = lambda a: a)
     lis = lis[start:end]
     ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), prop)
 
+
+def mult_group_parameter(data, grouping_func, parameter_func,
+                    average = True,
+                    filt=lambda a: True, 
+                    step = 1,
+                    groups=10):
+    count = {}
+    total = {}
+    iterable = None
+    c = 0
+    
+    if type(data) is ft.Scene:
+        iterable = data.iter_trajectories()
+    else:
+        iterable = data
+    
+    for element in iterable:
+        c += 1
+        if c % step != 0:
+            continue
+        if c % 200000 == 0:
+            print("200,000 units are ready, with a million more well on the way")
+        if not filt(element):
+            continue
+        point_count = len(element.velocity())
+        for i in xrange(point_count):
+            loc = grouping_func(element, i)
+            if loc in count.keys():
+                home_ind = random.choice(xrange(groups))
+                count[loc][home_ind] += 1.0
+                total[loc][home_ind] += parameter_func(element, i)
+            else:
+                count[loc] = np.array([0.0 for j in xrange(groups)], dtype=object)
+                total[loc] = np.array([0.0 for j in xrange(groups)], dtype=object)
+                home_ind = random.choice(xrange(groups))
+                count[loc][home_ind] = 1.0
+                total[loc][home_ind] = parameter_func(element, i)
+                
+ 
+    if not average:
+        return total
+        
+    for key in total.keys():
+        total[key] = np.array([(total[key][i] / (count[key][i] if count[key][i] != 0 else 1.0), count[key][i]) for i in xrange(groups)])
+    return total
+
+    
+    
 """
 copy paste tools
 
