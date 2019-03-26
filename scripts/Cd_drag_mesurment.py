@@ -85,6 +85,22 @@ def group_avarage_velocity(data, grouping_func,
     def param_f(element, i):
         return element.velocity()[i]
     return tls.mult_group_parameter(data, grouping_func, param_f, filt=filt, step=step, groups=groups)
+    
+def group_avarage_velocity_u(data, grouping_func,
+                           filt=lambda a: True, 
+                           step = 1,
+                           groups=1):
+    def param_f(element, i):
+        return -element.velocity()[i][0]
+    return tls.mult_group_parameter(data, grouping_func, param_f, filt=filt, step=step, groups=groups)
+
+def group_avarage_velocity_w(data, grouping_func,
+                           filt=lambda a: True, 
+                           step = 1,
+                           groups=1):
+    def param_f(element, i):
+        return element.velocity()[i][1]
+    return tls.mult_group_parameter(data, grouping_func, param_f, filt=filt, step=step, groups=groups)
         
 def plot_Cd_Fox():
     fig, ax = pplot.subplots()
@@ -145,10 +161,6 @@ def plot_Cd_Fox():
 
     return fig, ax, vfig, vax
 
-fig, ax, a, b = plot_Cd_Fox()
-fig.show()
-pplot.show()
-    
 def get_average_velocity(speed):
     low_speed = group_avarage_velocity(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5"),
                            lambda t, i: tls.group_by_height(t, i, 0, 0.18, 0.01))

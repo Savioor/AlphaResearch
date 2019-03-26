@@ -107,7 +107,7 @@ def get_data_from_dict(dic, func):
         ret.append(func(dic[key]))
     return ret
 
-#   def to_wrold_coords(vector):
+#   def to_world_coords(vector):
 #      return [-vector[0], -vector[2], vector[1]]
 
 # TODO make not super bad
@@ -234,7 +234,8 @@ def mult_group_parameter(data, grouping_func, parameter_func,
         return total
         
     for key in total.keys():
-        total[key] = np.array([(total[key][i] / (count[key][i] if count[key][i] != 0 else 1.0), count[key][i]) for i in xrange(groups)])
+        total[key] = [(total[key][i] / (count[key][i] if count[key][i] != 0 else 1.0), count[key][i]) for i in xrange(groups)]
+    
     return total
 
     

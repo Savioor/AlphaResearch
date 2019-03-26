@@ -9,7 +9,7 @@ Created on Wed Jul 25 09:53:15 2018
 import tools as tls
 import numpy as np
 import matplotlib.pyplot as pplot
-from Raupach_eq_drag_mesurments import get_drag_raupach, area_by_volume
+from Raupach_eq_drag_mesurments import get_drag_raupach, get_drag_raupach_err, area_by_volume
 from acc_mesurments import sum_all_acc
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, air_density, nb
 from get_statistics import get_std_h
@@ -249,20 +249,44 @@ def plot_Cd(vel, use_U_inf=False, version = ""):
 def plot_rey_stress():
     fig, ax = pplot.subplots()
     rs25 = get_drag_raupach("2.5", area=area_by_volume)["rey stress gradient"]
+    rs25err = get_drag_raupach_err("2.5", area=area_by_volume)["rey stress gradient h"]
     rs40 = get_drag_raupach("4.0", area=area_by_volume)["rey stress gradient"]
+    rs40err = get_drag_raupach_err("4.0", area=area_by_volume)["rey stress gradient h"]
+
     lis = []
-    for key in sorted(rs25.keys()z):
-        lis.append((rs25[key] / (-0.5 * (2.5 ** 2) * area_by_volume), key / 10.0))
+    err_lis = [[], []]
+    for key in sorted(rs25.keys()):
+        value = (rs25[key] / (-0.5 * (2.5 ** 2) * area_by_volume))
+        err_value = abs(value - (rs25err[key] / (-0.5 * (2.5 ** 2) * area_by_volume)))
+        err_lis[0].append(err_value)
+        err_lis[1].append(err_value)
+        lis.append((value, key / 10.0))
+    err_lis[0] = err_lis[0][:-6]
+    err_lis[1] = err_lis[1][:-6]
     lis = lis[:-6]
-    ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "cs-", label="2.5 m/s")
+    ax.errorbar(map(lambda a: a[1], lis), map(lambda a: a[0], lis), fmt="cs-", label="2.5 m/s", yerr=err_lis)
     lis = []
+    
+    err_lis = [[], []]
     for key in sorted(rs40.keys()):
-        lis.append((rs40[key] / (-0.5 * (2.5 ** 2) * area_by_volume), key / 10.0))
+        value = (rs40[key] / (-0.5 * (4.0 ** 2) * area_by_volume))
+        err_value = abs(value - (rs40err[key] / (-0.5 * (4.0 ** 2) * area_by_volume)))
+        err_lis[0].append(err_value)
+        err_lis[1].append(err_value)
+        lis.append((value, key / 10.0))
+    err_lis[0] = err_lis[0][:-6]
+    err_lis[1] = err_lis[1][:-6]
     lis = lis[:-6]
-    ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "gs-", label="4.0 m/s")
+    ax.errorbar(map(lambda a: a[1], lis), map(lambda a: a[0], lis), fmt="gs-", label="4.0 m/s", yerr=err_lis)
 
     ax.legend()
     ax.set_xlabel("z/H")
     ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 16)
 
     return fig, ax
+
+if __name__ == '__main__':
+    fig, ax = plot_rey_stress()
+    fig.show()
+    pplot.show()
+    

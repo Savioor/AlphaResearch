@@ -9,7 +9,8 @@ Created on Tue Jul 17 12:36:31 2018
 import tools as tls
 import numpy as np
 import flowtracks.io as ft
-from Cd_drag_mesurment import group_avarage_velocity
+from Cd_drag_mesurment import group_avarage_velocity, group_avarage_velocity_u, group_avarage_velocity_w
+from get_statistics import merge_long_dict
 
 def calculate_midpoint_derivative(prev, nex, h):
     return (1.0 / (2.0*h)) * (nex - prev)
@@ -146,6 +147,99 @@ def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accur
     
     return to_ret
     
+
+def get_drag_raupach_err(velocity, linear = False, area = 0.0005, accuracy=def_accuracy):
+    
+    
+    to_ret = {}
+    
+    rey_data = tls.read_json("raupach_data/rey_stress_herr_" + velocity)
+    rey_stress = {}
+    
+    for key in rey_data:
+        if rey_data[key][1] < accuracy:
+            continue
+        ind = (float(key.split(" - ")[0]) * 100 + float(key.split(" - ")[1]) * 100) / 2.0
+        rey_stress[ind] = rey_data[key][0]
+        
+    to_ret["rey stress h"] = rey_stress
+    
+    drs = {}
+    
+    skrs = sorted(rey_stress.keys())
+    
+    if not linear:
+        for h in range(0, 16, 1):
+            key = h + 0.5
+            
+            rs = rey_stress
+            if key in skrs:
+                if skrs.index(key) == 0:
+                    drs[key] = calculate_start_derivative(rs[key], rs[key + 1], rs[key + 2], 0.01)
+                elif skrs.index(key) == len(skrs) - 1:
+                    drs[key] = calculate_end_derivative(rs[key], rs[key - 1], rs[key - 2], 0.01)
+                else:
+                    drs[key] = calculate_midpoint_derivative(rs[key - 1], rs[key + 1], 0.01)
+            
+            
+    else:
+        for h in range(0, 16, 1):
+            key = h + 0.5
+            drs[key] = (rey_stress[skrs[-1]] - rey_stress[skrs[0]]) / ((skrs[-1] - skrs[0]) / 100.0)
+             
+    to_ret["rey stress gradient h"]  = drs
+    
+    c_d = {}
+    
+    for key in drs.keys():
+        c_d[key] = drs[key] / (-0.5 * (float(velocity) ** 2) * area)
+    
+    to_ret["Cd h"] = c_d
+    
+    rey_data = tls.read_json("raupach_data/rey_stress_lerr_" + velocity)
+    rey_stress = {}
+    
+    for key in rey_data:
+        if rey_data[key][1] < accuracy:
+            continue
+        ind = (float(key.split(" - ")[0]) * 100 + float(key.split(" - ")[1]) * 100) / 2.0
+        rey_stress[ind] = rey_data[key][0]
+        
+    to_ret["rey stress l"] = rey_stress
+    
+    drs = {}
+    
+    skrs = sorted(rey_stress.keys())
+    
+    if not linear:
+        for h in range(0, 16, 1):
+            key = h + 0.5
+            
+            rs = rey_stress
+            if key in skrs:
+                if skrs.index(key) == 0:
+                    drs[key] = calculate_start_derivative(rs[key], rs[key + 1], rs[key + 2], 0.01)
+                elif skrs.index(key) == len(skrs) - 1:
+                    drs[key] = calculate_end_derivative(rs[key], rs[key - 1], rs[key - 2], 0.01)
+                else:
+                    drs[key] = calculate_midpoint_derivative(rs[key - 1], rs[key + 1], 0.01)
+                
+    else:
+        for h in range(0, 16, 1):
+            key = h + 0.5
+            drs[key] = (rey_stress[skrs[-1]] - rey_stress[skrs[0]]) / ((skrs[-1] - skrs[0]) / 100.0)
+             
+    to_ret["rey stress gradient l"]  = drs
+    
+    c_d = {}
+    
+    for key in drs.keys():
+        c_d[key] = drs[key] / (-0.5 * (float(velocity) ** 2) * area)
+    
+    to_ret["Cd l"] = c_d
+    
+    return to_ret
+    
     
 
 def get_reynolds_stress(data, avg_vel_by_loc, start=0, end=0.18, step=0.01):
@@ -162,6 +256,29 @@ def get_reynolds_stress(data, avg_vel_by_loc, start=0, end=0.18, step=0.01):
     return tls.group_parameter(data, 
                            lambda t, i: tls.group_by_height(t, i, start, end, step),
                            param_f)
+                           
+def get_reynolds_stress_errors(data, avg_vel_by_loc, avg_vel_by_loc_w, lower, start=0, end=0.18, step=0.01):
+    
+    if type(avg_vel_by_loc) is str:
+        avg_vel_by_loc = tls.read_json(avg_vel_by_loc)
+    
+    if type(avg_vel_by_loc_w) is str:
+        avg_vel_by_loc_w = tls.read_json(avg_vel_by_loc_w)
+    
+    index = -1
+    if lower:
+        index = 0
+    
+    def param_f(elem, i):
+        position = str(tls.group_by_location(elem, i)).replace("-0.0", "0.0")
+        return (-elem.velocity()[i][0] - sorted(avg_vel_by_loc[position], key=lambda x: x[0])[index][0]) * \
+                (-sorted(avg_vel_by_loc_w[position], key=lambda x: x[0])[index][0] + elem.velocity()[i][1])
+        
+    
+    return tls.group_parameter(data, 
+                           lambda t, i: tls.group_by_height(t, i, start, end, step),
+                           param_f)
+
 
 def get_dispersive_stress(data, avg_vel_by_loc, avg_vel_by_h, start=0, end=0.18, step=0.01):
     
@@ -207,33 +324,55 @@ def auto_disp_stress_calculator(speed):
     
     tls.save_as_json(merged_stress, "raupach_data/disp_stress_" + speed)
 
-def auto_rey_stress_calculator(speed, skip_vel = True):
+def auto_rey_stress_err_calculator(speed, skip_vel = True):
     if not skip_vel:
         get_velocity_by_loc(speed)
     
-    high_stress = get_reynolds_stress(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_high.h5"),
-                        "raupach_data/avg_vel_by_loc_" + speed)
+    high_stress = get_reynolds_stress_errors(ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_high.h5"),
+                        "raupach_data/goruped_u_avg_vel_by_loc_" + speed,
+                        "raupach_data/goruped_w_avg_vel_by_loc_" + speed, True)
     print("Stress higher calculated")
     print(high_stress)
     
-    low_stress = get_reynolds_stress(ft.Scene("/home/ron/Desktop/Alexey/the_dataset/traj_" + speed + "_low.h5"),
-                        "raupach_data/avg_vel_by_loc_" + speed)
+    low_stress = get_reynolds_stress_errors(ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_low.h5"),
+                        "raupach_data/goruped_u_avg_vel_by_loc_" + speed,
+                        "raupach_data/goruped_w_avg_vel_by_loc_" + speed, True)
     print("Stress lower calculeted")
     print(low_stress)
     
-    tls.save_as_json(high_stress, "raupach_data/rey_stress_higher_" + speed)
-    tls.save_as_json(low_stress, "raupach_data/rey_stress_lower_" + speed)
+    tls.save_as_json(high_stress, "raupach_data/rey_stress_higher_lerr_" + speed)
+    tls.save_as_json(low_stress, "raupach_data/rey_stress_lower_lerr_" + speed)
     
     merged_stress = tls.merge_dict(high_stress, low_stress, 
                                lambda a, b: [(a[0] * a[1] + b[0] * b[1]) / (a[1] + b[1]),
                                              a[1] + b[1]])
     
-    tls.save_as_json(merged_stress, "raupach_data/rey_stress_" + speed)
+    tls.save_as_json(merged_stress, "raupach_data/rey_stress_lerr_" + speed)
+    
+    high_stress = get_reynolds_stress_errors(ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_high.h5"),
+                        "raupach_data/goruped_u_avg_vel_by_loc_" + speed,
+                        "raupach_data/goruped_w_avg_vel_by_loc_" + speed, False)
+    print("Stress higher calculated")
+    print(high_stress)
+    
+    low_stress = get_reynolds_stress_errors(ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_low.h5"),
+                        "raupach_data/goruped_u_avg_vel_by_loc_" + speed,
+                        "raupach_data/goruped_w_avg_vel_by_loc_" + speed, False)
+    print("Stress lower calculeted")
+    print(low_stress)
+    
+    tls.save_as_json(high_stress, "raupach_data/rey_stress_higher_herr_" + speed)
+    tls.save_as_json(low_stress, "raupach_data/rey_stress_lower_herr_" + speed)
+    
+    merged_stress = tls.merge_dict(high_stress, low_stress, 
+                               lambda a, b: [(a[0] * a[1] + b[0] * b[1]) / (a[1] + b[1]),
+                                             a[1] + b[1]])
+    
+    tls.save_as_json(merged_stress, "raupach_data/rey_stress_herr_" + speed)
 
-
-def get_velocity_by_loc(speed, groups=1, prefix=""):
-
-    higher_avg_vel = group_avarage_velocity(
+    
+def get_velocity_by_loc_u(speed, groups=1, prefix=""):
+    higher_avg_vel = group_avarage_velocity_u(
         ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_high.h5")
                 , tls.group_by_location, groups=groups)
     print("Higher vel calculated")
@@ -246,7 +385,7 @@ def get_velocity_by_loc(speed, groups=1, prefix=""):
     tls.save_as_json(higer_dic, "raupach_data/" + prefix + "avg_vel_by_loc_higher_" + speed)
 
         
-    lower_avg_vel = group_avarage_velocity(
+    lower_avg_vel = group_avarage_velocity_u(
             ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_low.h5")
             , tls.group_by_location, groups=groups)
     print("Lower vel calculated")
@@ -258,13 +397,46 @@ def get_velocity_by_loc(speed, groups=1, prefix=""):
     
     tls.save_as_json(lower_dic, "raupach_data/" + prefix + "avg_vel_by_loc_lower_" + speed)
     
-    merged = tls.merge_dict(lower_dic, higer_dic, 
-               lambda a, b: [((np.array(a[0]) * a[1] 
-               + np.array(b[0]) * b[1]) / (a[1] + b[1])).tolist(), a[1] + b[1]])
+    merged = tls.merge_dict(lower_dic, higer_dic, merge_long_dict)
+    
+    tls.save_as_json(merged, "raupach_data/" + prefix + "avg_vel_by_loc_" + speed)
+    
+def get_velocity_by_loc_w(speed, groups=1, prefix=""):
+    higher_avg_vel = group_avarage_velocity_w(
+        ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_high.h5")
+                , tls.group_by_location, groups=groups)
+    print("Higher vel calculated")
+        
+    higer_dic = {}
+    for key in higher_avg_vel.keys():
+        higer_dic[str(key).replace("-0.0", "0.0")] = higher_avg_vel[key]
+        
+        
+    tls.save_as_json(higer_dic, "raupach_data/" + prefix + "avg_vel_by_loc_higher_" + speed)
+
+        
+    lower_avg_vel = group_avarage_velocity_w(
+            ft.Scene("C:/Users/theem/Desktop/Projects/alpha offline/Data/traj_" + speed + "_low.h5")
+            , tls.group_by_location, groups=groups)
+    print("Lower vel calculated")
+        
+        
+    lower_dic = {}
+    for key in lower_avg_vel.keys():
+        lower_dic[str(key).replace("-0.0", "0.0")] = lower_avg_vel[key]
+    
+    tls.save_as_json(lower_dic, "raupach_data/" + prefix + "avg_vel_by_loc_lower_" + speed)
+    
+    merged = tls.merge_dict(lower_dic, higer_dic, merge_long_dict)
     
     tls.save_as_json(merged, "raupach_data/" + prefix + "avg_vel_by_loc_" + speed)
 
 if __name__ == "__main__":
     print "started"
-    get_velocity_by_loc("2.5", groups=10, prefix="goruped_")
+    print get_drag_raupach("2.5")["Cd"] #rey stress gradient
+    print ""
+    print get_drag_raupach_err("2.5")["Cd h"]
+    print ""
+    print get_drag_raupach_err("2.5")["Cd l"]
+
     
