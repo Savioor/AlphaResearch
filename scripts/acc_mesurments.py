@@ -10,7 +10,7 @@ import tools as tls
 import numpy as np
 import matplotlib.pyplot as pplot
 from Cd_drag_mesurment import air_density
-from Raupach_eq_drag_mesurments import get_drag_raupach
+import Raupach_eq_drag_mesurments as raupach
 import math
 
 
@@ -186,31 +186,48 @@ mass = air_density * 0.01 * 0.01 * 0.1
 
 def sum_all_acc(vel, area=0.05 * 0.01, mult=mass, only_corner=True, version="2"):
     acc = tls.read_json("accel" + version + "_by_x_and_z_" + vel)
+    acc_err = tls.read_json("Statistics/acc_nb_xz_mult_avgs_" + vel)
     total = {}
     count = {}
     num = {}
+    err = {}
     Cd = {}
     Cd_g = {}
     for key in acc.keys():
 
         if only_corner and -float(key.split(", ")[0].replace('(', "")) <= 0.12:
             continue
-
+        
+        if key not in acc_err.keys():
+            print key + " is missing"
+            continue
+        
         h = float(key.split(", ")[1].replace(")", ""))
         if h in total.keys():
             total[h] += np.array(acc[key][0]) * mult
+            err[h][0] += sorted(acc_err[key], key=lambda a: a[0])[0][0] * mult
+            err[h][1] += sorted(acc_err[key], key=lambda a: a[0])[-1][0] * mult
             count[h] += acc[key][1]
             num[h] += 1.0
         else:
             total[h] = np.array(acc[key][0]) * mult
             count[h] = acc[key][1]
+            err[h] = [0, 0]
+            err[h][0] = sorted(acc_err[key], key=lambda a: a[0])[0][0] * mult
+            err[h][1] = sorted(acc_err[key], key=lambda a: a[0])[-1][0] * mult
             num[h] = 1.0
-    tmp = get_drag_raupach(vel)["v"]
+    tmp = raupach.get_drag_raupach(vel)["v"]
     for key in total.keys():
         total[key] = [total[key] / num[key], count[key]]
         Cd_g[key] = (-total[key][0][0] * 2) / (air_density * (float(vel) ** 2) * area), count[key]
+        err[key][0] = abs((((err[key][0] / num[key]) * 2) / (air_density * (float(vel) ** 2) * area)) - Cd_g[key][0])
+        err[key][1] = abs((((err[key][1] / num[key]) * 2) / (air_density * (float(vel) ** 2) * area)) - Cd_g[key][0])
         try:
             Cd[key] = (-total[key][0][0] * 2) / (air_density * (tmp[round(key * 100.0) - 0.5] ** 2) * area), count[key]
         except KeyError:
             pass
-    return total, Cd, Cd_g
+    return total, Cd, Cd_g, err
+    
+if __name__ == '__main__':
+    pass
+    #print sum_all_acc("2.5")

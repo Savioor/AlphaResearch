@@ -3,15 +3,16 @@
 """
 Created on Wed Jul 25 09:53:15 2018
 
-@author: ron
+@author: Alexey
 """
 
 import tools as tls
 import numpy as np
 import matplotlib.pyplot as pplot
 from Raupach_eq_drag_mesurments import get_drag_raupach, get_drag_raupach_err, area_by_volume
-from acc_mesurments import sum_all_acc
+from acc_mesurments import sum_all_acc, mass
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, air_density, nb
+import Cd_drag_mesurment as cdCode
 from get_statistics import get_std_h
 
 def heat_map_velocity(vel):
@@ -159,13 +160,13 @@ def get_error_bars(file_name, data):
     upper_err = []
     for v in data:
         err = get_error(file_name, v[1])
-        print v[0] - err[0], err[1] - v[0]
+        print v[1]
         lower_err.append(abs(v[0] - err[0]))
         upper_err.append(abs(err[1] - v[0]))
     return [lower_err, upper_err]
 
 
-def get_error(file_name, h):
+def get_error(file_name, h, mult=1.0):
     data = tls.read_json(file_name)
     for key in data.keys():
         splat = key.split(" - ")
@@ -174,7 +175,7 @@ def get_error(file_name, h):
         if h > firstNum and h < secondNum:
             rel_array = data[key]
             rel_array.sort(key=lambda a: a[0])
-            return np.array([rel_array[0][0], rel_array[-1][0]])
+            return np.array([rel_array[0][0], rel_array[-1][0]]) * mult
 
     
 def plot_drag(vel, mass = air_density * 0.1 * 0.01 * 0.15):
@@ -182,7 +183,9 @@ def plot_drag(vel, mass = air_density * 0.1 * 0.01 * 0.15):
     
     t = calc_vel_and_drag_from_data_Cd(general + vel)["drag_list"]
     t = t[:-7]
-    ax.plot(map(lambda a: a[1] * 10, t), map(lambda a: a[0], t), "bo-", label="Fox et. al.")
+    ax.errorbar(map(lambda a: a[1] * 10, t), map(lambda a: a[0], t), fmt="bo-",
+        label="Fox et. al.",
+        yerr=cdCode.get_error_bars("Statistics/vel_mult_avgs_" + vel, t, air_density, float(vel)))
         
     t = sum_all_acc(vel, only_corner=True)[0]
     lis = []
@@ -204,6 +207,7 @@ def plot_drag(vel, mass = air_density * 0.1 * 0.01 * 0.15):
     
     return fig, ax
 
+# For the graphs in the paper use 'use_U_inf=True' and 'version="2"'
 def plot_Cd(vel, use_U_inf=False, version = ""):
     fig, ax = pplot.subplots()
     if not use_U_inf:
@@ -211,17 +215,34 @@ def plot_Cd(vel, use_U_inf=False, version = ""):
     else:
         t = calc_vel_and_drag_from_data_Cd(general + vel)["drag_list"]
         t = t[:-7]
-        ax.plot(map(lambda a: a[1] * 10.0, t), map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (float(vel)**2)), t), "bo-", label="Fox et. al.")
+        ax.errorbar(map(lambda a: a[1] * 10.0, t), 
+            map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (float(vel)**2)), t), fmt="bo-",
+            label="Fox et. al.",
+            yerr=cdCode.get_error_bars("Statistics/vel_mult_avgs_" + vel, t, air_density, float(vel)))
 
     t = get_drag_raupach(vel, area=area_by_volume)["Cd br"] \
     if not use_U_inf else get_drag_raupach(vel, area=area_by_volume)["rey stress gradient"]
+    e = get_drag_raupach_err(vel, area=area_by_volume)["rey stress gradient h"]
+    v = float(vel)
     lis = []
+    err_lis = [[],[]]
+    
     for key in sorted(t.keys()):
-        lis.append((t[key] / (-0.5 * (float(vel) ** 2) * area_by_volume), key / 10.0))
+        value = (t[key] / (-0.5 * (v ** 2) * area_by_volume))
+        err_value = abs(value - (e[key] / (-0.5 * (v ** 2) * area_by_volume)))
+        err_lis[0].append(err_value)
+        err_lis[1].append(err_value)
+        lis.append((value, key / 10.0))
+    
     if not use_U_inf:
+        err_lis[0] = err_lis[0][1:]
+        err_lis[1] = err_lis[1][1:]
         lis = lis[1:]
+    err_lis[0] = err_lis[0][:-6]
+    err_lis[1] = err_lis[1][:-6]
     lis = lis[:-6]
-    ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "mo-", label="Brunet et. al.")
+    ax.errorbar(map(lambda a: a[1], lis), map(lambda a: a[0], lis), fmt="mo-", label="Brunet et. al.",
+        yerr=err_lis)
     
     """
     t = sum_all_acc("2.5")[1]
@@ -232,19 +253,88 @@ def plot_Cd(vel, use_U_inf=False, version = ""):
     ax.plot(map(lambda a: a[1], lis), map(lambda a: a[0], lis), "co-", label="Accel total avg")
     """
     
+    error = sum_all_acc(vel, only_corner=True, version=version)[3]
     t = sum_all_acc(vel, only_corner=True, version=version)[1] \
     if not use_U_inf else sum_all_acc(vel, only_corner=True, version=version)[2]
+    t.pop(sorted(t.keys())[0])
+    error.pop(sorted(error.keys())[0])
+
     lis = []
+    err_lis = [[], []]
+        
     for key in sorted(t.keys()):
+        err_lis[0].append(error[key][0])
+        err_lis[1].append(error[key][1])
         lis.append((t[key][0], key * 10.0))
-    lis = lis[1:-7 if vel == "4.0" else -8]
-    ax.plot(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), "co-", label="Accel local avg")
+    lis = lis[0 if vel == "4.0" else 1:-7 if vel == "4.0" else -8]
+    err_lis[0] = err_lis[0][0 if vel == "4.0" else 1:-7 if vel == "4.0" else -8]
+    err_lis[1] = err_lis[1][0 if vel == "4.0" else 1:-7 if vel == "4.0" else -8]
+
+    ax.errorbar(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), fmt="co-", label="Accel local avg", yerr=err_lis)
 
     ax.legend(loc=2)
     ax.set_xlabel(r"z/H", size=12)
     ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 18)
     
     return fig, ax
+
+
+def plot_acc_drag(use_U_inf=False, version = ""):
+    
+    fig, ax = pplot.subplots()
+    
+    vel = "2.5"
+    
+    error = sum_all_acc(vel, only_corner=True, version=version)[3]
+    t = sum_all_acc(vel, only_corner=True, version=version)[1] \
+    if not use_U_inf else sum_all_acc(vel, only_corner=True, version=version)[2]
+    t.pop(sorted(t.keys())[0])
+    error.pop(sorted(error.keys())[0])
+    t.pop(sorted(t.keys())[0])
+    error.pop(sorted(error.keys())[0])
+
+    lis = []
+    err_lis = [[], []]
+        
+    for key in sorted(t.keys()):
+        err_lis[0].append(error[key][0])
+        err_lis[1].append(error[key][1])
+        lis.append((t[key][0], key * 10.0))
+    lis = lis[:-7 if vel == "4.0" else -8]
+    err_lis[0] = err_lis[0][:-7 if vel == "4.0" else -8]
+    err_lis[1] = err_lis[1][:-7 if vel == "4.0" else -8]
+
+    ax.errorbar(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), fmt="co-", label=vel, yerr=err_lis)
+    
+    vel = "4.0"
+    
+    error = sum_all_acc(vel, only_corner=True, version=version)[3]
+    t = sum_all_acc(vel, only_corner=True, version=version)[1] \
+    if not use_U_inf else sum_all_acc(vel, only_corner=True, version=version)[2]
+    t.pop(sorted(t.keys())[0])
+    error.pop(sorted(error.keys())[0])
+    t.pop(sorted(t.keys())[0])
+    error.pop(sorted(error.keys())[0])
+
+    lis = []
+    err_lis = [[], []]
+        
+    for key in sorted(t.keys()):
+        err_lis[0].append(error[key][0])
+        err_lis[1].append(error[key][1])
+        lis.append((t[key][0], key * 10.0))
+    lis = lis[:-7 if vel == "4.0" else -8]
+    err_lis[0] = err_lis[0][:-7 if vel == "4.0" else -8]
+    err_lis[1] = err_lis[1][:-7 if vel == "4.0" else -8]
+
+    ax.errorbar(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), fmt="go-", label=vel, yerr=err_lis)
+    
+    ax.legend(loc=2)
+    ax.set_xlabel(r"z/H", size=12)
+    ax.set_ylabel(r"$\frac{2\cdot F_D}{\rho A U^2_{\infty}}$", size = 18)
+    
+    return fig, ax
+        
 
 def plot_rey_stress():
     fig, ax = pplot.subplots()
@@ -286,7 +376,10 @@ def plot_rey_stress():
     return fig, ax
 
 if __name__ == '__main__':
-    fig, ax = plot_rey_stress()
+    #   fig, ax = plot_Cd("2.5", True, "2")
+    #fig.show()
+    fig, ax = plot_acc_drag(True, "2")
     fig.show()
+
     pplot.show()
     

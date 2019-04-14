@@ -1,28 +1,29 @@
 import flowtracks.io as ft
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, nb
 from tools import save_as_json, read_json, merge_dict, group_by_height, is_in_corner
+import acc_mesurments
 from math import sqrt
 import random
 
 root = "C:\\Users\\theem\\Desktop\\Projects\\alpha offline\\Data\\"
 def main():
-    
-    lower25 = read_json("Statistics/vel_nb_mult_avgs_higher_2.5")
-    higher25 = read_json("Statistics/vel_nb_mult_avgs_lower_2.5")
-    save_as_json(merge_dict(lower25, higher25, merge_long_dict), "Statistics/vel_nb_mult_avgs_2.5")
-    
-    lower40 = read_json("Statistics/vel_nb_mult_avgs_higher_4.0")
-    higher40 = read_json("Statistics/vel_nb_mult_avgs_lower_4.0")
-    save_as_json(merge_dict(lower40, higher40, merge_long_dict), "Statistics/vel_nb_mult_avgs_4.0")
       
-    """
-    print "doing vel 2"
-    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_2.5_high.h5")), "Statistics/vel_w_mult_avgs_higher_2.5")
-    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_2.5_low.h5")), "Statistics/vel_w_mult_avgs_lower_2.5")
-    print "2.5 done!"
-    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_4.0_high.h5")), "Statistics/vel_w_mult_avgs_higher_4.0")
-    save_as_json(average_w_vel_in_groups(ft.Scene(root + "traj_4.0_low.h5")), "Statistics/vel_w_mult_avgs_lower_4.0")
-    """ 
+    #print "doing vel 2"
+    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_2.5_high.h5")), "Statistics/acc_nb_xz_mult_avgs_higher_2.5")
+    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_2.5_low.h5")), "Statistics/acc_nb_xz_mult_avgs_lower_2.5")
+    #print "2.5 done!"
+    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_4.0_high.h5")), "Statistics/acc_nb_xz_mult_avgs_higher_4.0")
+    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_4.0_low.h5")), "Statistics/acc_nb_xz_mult_avgs_lower_4.0")
+    #print "Done!"
+    
+    lower25 = read_json("Statistics/acc_nb_xz_mult_avgs_higher_2.5")
+    higher25 = read_json("Statistics/acc_nb_xz_mult_avgs_lower_2.5")
+    save_as_json(merge_dict(lower25, higher25, merge_long_dict), "Statistics/acc_nb_xz_mult_avgs_2.5")
+    
+    lower40 = read_json("Statistics/acc_nb_xz_mult_avgs_higher_4.0")
+    higher40 = read_json("Statistics/acc_nb_xz_mult_avgs_lower_4.0")
+    save_as_json(merge_dict(lower40, higher40, merge_long_dict), "Statistics/acc_nb_xz_mult_avgs_4.0")
+    
     
 
 
@@ -40,7 +41,7 @@ def merge_long_dict(elem1, elem2):
 def average_acc_in_groups(data,
             filt=lambda a: True, 
             step = 1,
-            groups=10):
+            groups=5):
     count = {}
     total = {}
     iterable = None
@@ -51,7 +52,7 @@ def average_acc_in_groups(data,
     else:
         iterable = data
     
-    grouping_func = lambda t, i: group_by_height(t, i, 0, 0.18, 0.01)
+    grouping_func = lambda a, b: str(acc_mesurments.group_by_x_n_z2(a, b))
     
     print "Started running"
     

@@ -17,16 +17,6 @@ area_tall = 0.1 * 0.05 # cm^2
 area_short = 0.05 * 0.05 # cm^2
 drag_coefficient = 2.05 
 
-def get_error_bars(file_name, data, air_density, velocity):
-    lower_err = []
-    upper_err = []
-    for v in data:
-        err = get_error_cd_modified(file_name, v[1])
-        lower_err.append(abs(v[0] - err[0]) / (0.5 * air_density * 0.01 * 0.05 * (velocity ** 2)))
-        upper_err.append(abs(err[1] - v[0]) / (0.5 * air_density * 0.01 * 0.05 * (velocity ** 2)))
-    return [lower_err, upper_err]
-
-
 def get_error_cd_modified(file_name, h):
     data = tls.read_json(file_name)
     for key in data.keys():
@@ -42,6 +32,15 @@ def get_error_cd_modified(file_name, h):
             (estimate_drag_Cd(rel_array[-1][0], 0.0005))
             ]
             )
+
+def get_error_bars(file_name, data, air_density, velocity, funcc=get_error_cd_modified):
+    lower_err = []
+    upper_err = []
+    for v in data:
+        err = funcc(file_name, v[1])
+        lower_err.append(abs(v[0] - err[0]) / (0.5 * air_density * 0.01 * 0.05 * (velocity ** 2)))
+        upper_err.append(abs(err[1] - v[0]) / (0.5 * air_density * 0.01 * 0.05 * (velocity ** 2)))
+    return [lower_err, upper_err]
 
 
 def estimate_drag_Cd(velocity, area, density=air_density, coefficient=drag_coefficient):
@@ -175,4 +174,9 @@ def get_average_velocity(speed):
      a[1] + b[1]])
     
     tls.save_as_json(mrg, "cd_data/avg_vel_by_height_" + speed)
+    
+if __name__ == '__main__':
+    fig, ax, vfig, vax = plot_Cd_Fox()
+    fig.show()
+    pplot.show()
     

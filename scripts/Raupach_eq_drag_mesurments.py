@@ -3,7 +3,7 @@
 """
 Created on Tue Jul 17 12:36:31 2018
 
-@author: ron
+@author: Alexey
 """
 
 import tools as tls
@@ -24,6 +24,7 @@ def calculate_end_derivative(last, prelast, preprelast, h):
 
 def_accuracy = 10 ** 4
 area_by_volume = (0.01*0.05)/(0.1*0.15*0.01)
+
 def get_drag_raupach(velocity, linear = False, area = 0.0005, accuracy=def_accuracy):
     
     to_ret = {}

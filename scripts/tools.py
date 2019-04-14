@@ -41,7 +41,7 @@ where insted of 0 you put values for start end and jump
 def group_by_height(traj, i, start, end, jump, unsafe = False):
     val = start
     if (start > 0.1 or end > 0.2 or jump > 0.05) and not unsafe:
-        print("start = {}, end = {}, jump = {}. all in cm. are you sure you are correct?".format(start, end, jump)
+        print("start = {}, end = {}, jump = {}. all in m. are you sure you are correct?".format(start, end, jump)
               + " if so please use unsafe mode")
         raise Exception('Suspicious values inserted in unsafe mode')
     
@@ -91,7 +91,7 @@ def merge_dict(dict1, dict2, merge_func, ignore_1 = False, ignore_2 = False):
     return newd
 
 def is_in_corner(traj):
-       return -traj.pos()[0, 0] > 0.05 and -traj.pos()[0, 2] > 0.075
+    return -traj.pos()[0, 0] > 0.05 and -traj.pos()[0, 2] > 0.075
 
 """
 Created on Mon Jul 16 10:34:15 2018
