@@ -1,29 +1,39 @@
 import flowtracks.io as ft
 from Cd_drag_mesurment import calc_vel_and_drag_from_data_Cd, general, nb
-from tools import save_as_json, read_json, merge_dict, group_by_height, is_in_corner
+from tools import save_as_json, read_json, merge_dict, group_by_height, is_in_corner, group_by_location
 import acc_mesurments
 from math import sqrt
 import random
 
 root = "C:\\Users\\theem\\Desktop\\Projects\\alpha offline\\Data\\"
 def main():
-      
-    #print "doing vel 2"
-    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_2.5_high.h5")), "Statistics/acc_nb_xz_mult_avgs_higher_2.5")
-    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_2.5_low.h5")), "Statistics/acc_nb_xz_mult_avgs_lower_2.5")
-    #print "2.5 done!"
-    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_4.0_high.h5")), "Statistics/acc_nb_xz_mult_avgs_higher_4.0")
-    #save_as_json(average_acc_in_groups(ft.Scene(root + "traj_4.0_low.h5")), "Statistics/acc_nb_xz_mult_avgs_lower_4.0")
-    #print "Done!"
     
-    lower25 = read_json("Statistics/acc_nb_xz_mult_avgs_higher_2.5")
-    higher25 = read_json("Statistics/acc_nb_xz_mult_avgs_lower_2.5")
-    save_as_json(merge_dict(lower25, higher25, merge_long_dict), "Statistics/acc_nb_xz_mult_avgs_2.5")
+    print "2.5"
+    print get_average_error("accel2_by_x_and_z_2.5", "Statistics/acc_loc_mult_avgs_2.5")
+    print "4.0"
+    print get_average_error("accel2_by_x_and_z_4.0", "Statistics/acc_loc_mult_avgs_4.0")
+        
     
-    lower40 = read_json("Statistics/acc_nb_xz_mult_avgs_higher_4.0")
-    higher40 = read_json("Statistics/acc_nb_xz_mult_avgs_lower_4.0")
-    save_as_json(merge_dict(lower40, higher40, merge_long_dict), "Statistics/acc_nb_xz_mult_avgs_4.0")
+
+def get_average_error(value_group, error_group, limit=10000):
     
+    value_data = read_json(value_group)
+    error_data = read_json(error_group)
+    
+    avg = 0.0
+    count = 0.0
+    
+    for key in value_data.keys():
+        if key in error_data.keys():
+            value = value_data[key]
+            if value[1] > limit:
+                acc = -value[0][0]
+                err_orderd = list(map(lambda a: a[0], error_data[key]))
+                err_orderd.sort()
+                avg += (abs(err_orderd[0] - acc) + abs(err_orderd[-1] - acc)) / 2.0
+                count += 1
+    
+    return avg / count
     
 
 
@@ -41,7 +51,7 @@ def merge_long_dict(elem1, elem2):
 def average_acc_in_groups(data,
             filt=lambda a: True, 
             step = 1,
-            groups=5):
+            groups=4):
     count = {}
     total = {}
     iterable = None

@@ -303,6 +303,15 @@ def plot_acc_drag(use_U_inf=False, version = ""):
     lis = lis[:-7 if vel == "4.0" else -8]
     err_lis[0] = err_lis[0][:-7 if vel == "4.0" else -8]
     err_lis[1] = err_lis[1][:-7 if vel == "4.0" else -8]
+    
+    # <temp>
+    avg = 0
+    count = len(err_lis[0])
+    for i in range(count):
+        avg += (err_lis[0][i] + err_lis[1][i]) / 2.0
+    print "2.5"
+    print avg / count
+    # </temp>
 
     ax.errorbar(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), fmt="co-", label=vel, yerr=err_lis)
     
@@ -326,7 +335,16 @@ def plot_acc_drag(use_U_inf=False, version = ""):
     lis = lis[:-7 if vel == "4.0" else -8]
     err_lis[0] = err_lis[0][:-7 if vel == "4.0" else -8]
     err_lis[1] = err_lis[1][:-7 if vel == "4.0" else -8]
-
+    
+    # <temp>
+    avg = 0
+    count = len(err_lis[0])
+    for i in range(count):
+        avg += (err_lis[0][i] + err_lis[1][i]) / 2.0
+    print "4.0"
+    print avg / count
+    # </temp>
+    
     ax.errorbar(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), fmt="go-", label=vel, yerr=err_lis)
     
     ax.legend(loc=2)
@@ -379,7 +397,7 @@ if __name__ == '__main__':
     #   fig, ax = plot_Cd("2.5", True, "2")
     #fig.show()
     fig, ax = plot_acc_drag(True, "2")
-    fig.show()
+    #fig.show()
 
-    pplot.show()
+    #pplot.show()
     
