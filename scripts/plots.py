@@ -136,7 +136,7 @@ def plot_velocity():
     label="4.0 m/s",
     yerr=get_error_bars("Statistics/vel_mult_avgs_4.0", data4))
     
-    ax.errorbar(list(map(lambda a: a[1] * 10, data2nb)),
+    """ax.errorbar(list(map(lambda a: a[1] * 10, data2nb)),
     list(map(lambda a: a[0], data2nb)),
     fmt="co--",
     label="2.5 m/s near building",
@@ -146,7 +146,8 @@ def plot_velocity():
     list(map(lambda a: a[0], data4nb)),
     fmt="go--",
     label="4.0 m/s near building",
-    yerr=get_error_bars("Statistics/vel_nb_mult_avgs_4.0", data4nb))
+    yerr=get_error_bars("Statistics/vel_nb_mult_avgs_4.0", data4nb))"""
+    # The above plots the nb data, removed because in the original work this wasn't plotted
 
     ax.set_ylabel("Velocity (m/s)")
     ax.set_xlabel("z/H")
@@ -305,12 +306,12 @@ def plot_acc_drag(use_U_inf=False, version = ""):
     err_lis[1] = err_lis[1][:-7 if vel == "4.0" else -8]
     
     # <temp>
-    avg = 0
+    """avg = 0
     count = len(err_lis[0])
     for i in range(count):
         avg += (err_lis[0][i] + err_lis[1][i]) / 2.0
     print "2.5"
-    print avg / count
+    print avg / count"""
     # </temp>
 
     ax.errorbar(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), fmt="co-", label=vel, yerr=err_lis)
@@ -337,12 +338,12 @@ def plot_acc_drag(use_U_inf=False, version = ""):
     err_lis[1] = err_lis[1][:-7 if vel == "4.0" else -8]
     
     # <temp>
-    avg = 0
+    """avg = 0
     count = len(err_lis[0])
     for i in range(count):
         avg += (err_lis[0][i] + err_lis[1][i]) / 2.0
     print "4.0"
-    print avg / count
+    print avg / count"""
     # </temp>
     
     ax.errorbar(map(lambda a: a[1], lis), map(lambda a: -a[0], lis), fmt="go-", label=vel, yerr=err_lis)
@@ -393,11 +394,106 @@ def plot_rey_stress():
 
     return fig, ax
 
-if __name__ == '__main__':
-    #   fig, ax = plot_Cd("2.5", True, "2")
-    #fig.show()
-    fig, ax = plot_acc_drag(True, "2")
-    #fig.show()
 
-    #pplot.show()
+def plot_raupach_by_accel(use_U_inf=True, version = "2"):
+    
+    fig, ax = pplot.subplots()
+    
+    vels = ["2.5", "4.0"]
+    colors = {"2.5": "co-","4.0": "go-"}
+    
+    for vel in vels:
+        error = sum_all_acc(vel, only_corner=True, version=version)[3]
+        t = sum_all_acc(vel, only_corner=True, version=version)[1] \
+        if not use_U_inf else sum_all_acc(vel, only_corner=True, version=version)[2]
+        t.pop(sorted(t.keys())[0])
+        error.pop(sorted(error.keys())[0])
+        t.pop(sorted(t.keys())[0])
+        error.pop(sorted(error.keys())[0])
+        
+        rs25 = get_drag_raupach(vel, area=area_by_volume)["rey stress gradient"]
+        rs25err = get_drag_raupach_err(vel, area=area_by_volume)["rey stress gradient h"]
+        
+        lis = []
+        err_lis = [[], []]
+            
+        #print t.keys(), "---", rs25.keys()    
+        
+        for key in sorted(t.keys()):
+            if (round(key, 3)*100 in rs25.keys()):
+                err_lis[0].append(error[key][0])
+                err_lis[1].append(error[key][1])
+                lis.append((t[key][0], key * 10.0))
+        lis = lis[:-5]
+        err_lis[0] = err_lis[0][:-5]
+        err_lis[1] = err_lis[1][:-5]
+        print vel, "\n", lis, "\n"
+        
+        lis = map(lambda a: -a[0], lis)
+        
+        lis2 = []
+        err_lis2 = [[], []]
+        
+        vel_number = 2.5 if vel == "2.5" else 4.0
+        
+        for key in sorted(rs25.keys()):
+            if (key in map(lambda a: round(a, 3)*100, t.keys())):
+                value = (rs25[key] / (-0.5 * (vel_number ** 2) * area_by_volume))
+                err_value = abs(value - (rs25err[key] / (-0.5 * (vel_number ** 2) * area_by_volume)))
+                err_lis2[0].append(err_value)
+                err_lis2[1].append(err_value)
+                lis2.append((value, key / 10.0))
+        lis2 = lis2[:-5]
+        err_lis2[0] = err_lis2[0][:-5]
+        err_lis2[1] = err_lis2[1][:-5]
+        
+        lis2 = map(lambda a: a[0], lis2)
+        
+        #simul_insersion_sort(lis, [lis2, err_lis[0], err_lis[1], err_lis2[0], err_lis2[1]])
+
+        ax.errorbar(lis, lis2, fmt=colors[vel], label=vel, yerr=err_lis2, xerr=err_lis)
+    
+    ax.legend()
+    
+    ax.set_xlabel(r"$-\left \langle \overline{a} \right \rangle \cdot m / \phi$", size = 16)
+    ax.set_ylabel(r"$\frac{\partial \overline{\left \langle u' \cdot w' \right \rangle}}{\partial z} / \phi$", size = 16)
+
+    
+    return fig, ax
+    
+def simul_insersion_sort(master_list, sub_lists, acending=True):
+    for sorted_up_to in xrange(len(master_list)):
+    
+        critical = sorted_up_to
+        
+        
+        for i in xrange(sorted_up_to, len(master_list)):
+            if (master_list[i] < master_list[critical]) == acending:
+                critical = i
+                
+        temp = master_list[sorted_up_to]
+        master_list[sorted_up_to] = master_list[critical]
+        master_list[critical] = temp
+        
+        for lis in sub_lists:
+            temp = lis[sorted_up_to]
+            lis[sorted_up_to] = lis[critical]
+            lis[critical] = temp
+    
+    return (master_list, sub_lists)
+    
+
+def simul_sort_test():
+    master_lis = [1, 3, 4, 7, 5, 6, 2]
+    sub_lists = [[7, 8 - 3, 8 - 4, 8 - 7, 8 - 5, 8 - 6, 8 - 2], [1, 6, 8, 14, 10, 12, 4], [0, 1, 0, 1, 0, 1, 0]]
+    print simul_insersion_sort(master_lis, sub_lists)
+    
+
+if __name__ == '__main__':
+    fig, ax = plot_raupach_by_accel(use_U_inf=True, version="2")
+    fig.show()
+    #fig, ax = plot_acc_drag(True, "2")
+    #fig.show()
+    #simul_sort_test()
+    pplot.show()
     

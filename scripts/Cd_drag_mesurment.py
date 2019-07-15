@@ -140,7 +140,7 @@ def plot_Cd_Fox():
         "Statistics/vel_nb_mult_avgs_2.5",
         "Statistics/vel_nb_mult_avgs_4.0"
     ]
-    for t in range(len(drags)):
+    for t in range(len(drags) - 2): # -2 added to not plot nb data
         ax.errorbar(list(map(lambda a: a[1] * 10.0, drags[t])),
                 list(map(lambda a: a[0] / (0.5 * air_density * 0.01 * 0.05 * (vel[t] ** 2)), drags[t])), 
                 fmt=lines[t], 
